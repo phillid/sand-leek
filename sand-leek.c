@@ -190,7 +190,7 @@ main(int argc, char **argv) {
 		for (i = 0; i < thread_count; i++) {
 			khashes += khash_count[i];
 		}
-		printf("Average rate: %.2f kH/s (%.2f KH/s/thread)\n",
+		printf("Average rate: %.2f kH/s (%.2f kH/s/thread)\n",
 			(double)khashes / loops,
 			((double)khashes / loops) / thread_count);
 	}
