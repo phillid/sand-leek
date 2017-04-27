@@ -157,7 +157,7 @@ die_usage(const char *argv0) {
 
 int
 main(int argc, char **argv) {
-	char opt = '\0';
+	int opt = '\0';
 	int thread_count = 1;
 	int i = 0;
 	pthread_t *workers = NULL;
