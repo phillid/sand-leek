@@ -43,7 +43,7 @@ void*
 work(void *arg) {
 	char onion[17];
 	unsigned char sha[20];
-	uint64_t e = EXPONENT_MIN;
+	unsigned long e = EXPONENT_MIN;
 	unsigned int e_big_endian = 0;
 	unsigned char *der_data = NULL;
 	unsigned char *tmp_data = NULL;
