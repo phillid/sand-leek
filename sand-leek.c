@@ -11,6 +11,12 @@
 #include <openssl/sha.h>
 #include <openssl/pem.h>
 
+#define EXPONENT_SIZE_BYTES   4
+#define EXPONENT_MIN          0x1FFFFFFF
+#define EXPONENT_MAX          0xFFFFFFFF
+
+#define RSA_KEY_BITS          1024
+
 const static char base32_lookup[] = "abcdefghijklmnopqrstuvwxyz234567";
 static char *search;
 static int search_len;
@@ -35,19 +41,20 @@ onion_sha(char output[16], unsigned char sum[20]) {
 
 void*
 work(void *arg) {
-	char b32[17];
+	char onion[17];
 	unsigned char sha[20];
-	unsigned int e = 0x01FFFFFF;
-	unsigned int e_be = 0;
+	uint64_t e = EXPONENT_MIN;
+	unsigned int e_big_endian = 0;
 	unsigned char *der_data = NULL;
 	unsigned char *tmp_data = NULL;
 	size_t der_length = 0;
 	unsigned long volatile *kilo_hashes = arg;
 	unsigned long hashes = 0;
-	BIGNUM *be = NULL;
+	BIGNUM *bignum_e = NULL;
 	RSA *rsa_key = NULL;
 	SHA_CTX sha_c;
 	SHA_CTX working_sha_c;
+	int sem_val = 0;
 
 	rsa_key = RSA_new();
 	if (!rsa_key) {
@@ -55,16 +62,16 @@ work(void *arg) {
 		goto STOP;
 	}
 
-	be = BN_new();
-	if (!be) {
+	bignum_e = BN_new();
+	if (!bignum_e) {
 		fprintf(stderr, "Failed to allocate bignum for exponent\n");
 		goto STOP;
 	}
 
-	while(1) {
-		e = 0x1FFFFFFF;
-		BN_set_word(be, e);
-		if (!RSA_generate_key_ex(rsa_key, 1024, be, NULL)) {
+	while(sem_getvalue(&working, &sem_val) == 0 && sem_val == 0) {
+		e = EXPONENT_MIN;
+		BN_set_word(bignum_e, e);
+		if (!RSA_generate_key_ex(rsa_key, RSA_KEY_BITS, bignum_e, NULL)) {
 			fprintf(stderr, "Failed to generate RSA key\n");
 			goto STOP;
 		}
@@ -86,35 +93,36 @@ work(void *arg) {
 
 		/* core loop adapted from eschalot */
 		SHA1_Init(&sha_c);
-		SHA1_Update(&sha_c, der_data, der_length - 4);
+		SHA1_Update(&sha_c, der_data, der_length - EXPONENT_SIZE_BYTES);
 		free(der_data);
-		
-		e = 0x1FFFFFFF;
-		BN_set_word(be, e);
-		
-		while (e < 0xFFFFFFFF) {
 
+		while (e < EXPONENT_MAX) {
 			memcpy(&working_sha_c, &sha_c, 10*sizeof(SHA_LONG)); /* FIXME magic */
 			working_sha_c.num = sha_c.num;
 
-			e_be = htobe32(e);
-			SHA1_Update(&working_sha_c, &e_be, 4);
+			e_big_endian = htobe32(e);
+			SHA1_Update(&working_sha_c, &e_big_endian, EXPONENT_SIZE_BYTES);
 			SHA1_Final(&sha, &working_sha_c);
 
-			onion_sha(b32, sha);
+			onion_sha(onion, sha);
+			onion[16] = '\0';
+
 			if (hashes++ >= 1000) {
 				hashes = 0;
 				(*kilo_hashes)++;
+				/* check if we should still be working too */
+				sem_getvalue(&working, &sem_val);
+				if (sem_val > 0)
+					goto STOP;
 			}
-			b32[16] = '\0';
-			if(strncmp(b32, search, search_len) == 0) {
-				printf("Found %s.onion\n", b32);
+			if(strncmp(onion, search, search_len) == 0) {
+				printf("Found %s.onion\n", onion);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-				/* update the BN e with working e */
-				BN_set_word(be, e);
-				RSA_set0_key(rsa_key, NULL, be, NULL);
+				BN_set_word(bignum_e, e);
+				RSA_set0_key(rsa_key, NULL, bignum_e, NULL);
 #else
+				/* much tidier to be honest */
 				BN_set_word(rsa_key->e, e);
 #endif
 
@@ -213,10 +221,9 @@ main(int argc, char **argv) {
 			((double)khashes / loops) / thread_count);
 	}
 
-	/* FIXME signal other children to exit - use existing sema? */
-//	for (i = 0; i < thread_count; i++) {
-//		pthread_join(workers[i], NULL);
-//	}
+	for (i = 0; i < thread_count; i++) {
+		pthread_join(workers[i], NULL);
+	}
 
 	return 0;
 }
