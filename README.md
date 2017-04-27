@@ -20,3 +20,7 @@ similar tools out there when pushing work across cores.
 | 2× Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz |        94 MH/s | 16 |
 | Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz     |        38 MH/s |  8 |
 | AMD A4-1200 APU with Radeon(TM) HD Graphics |       2.3 MH/s |  2 |
+
+## Inspiration
+sand leek was greatly inspired by schallot, escahlot and scallion.
+
