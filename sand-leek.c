@@ -102,7 +102,7 @@ work(void *arg) {
 
 			e_big_endian = htobe32(e);
 			SHA1_Update(&working_sha_c, &e_big_endian, EXPONENT_SIZE_BYTES);
-			SHA1_Final(&sha, &working_sha_c);
+			SHA1_Final((unsigned char*)&sha, &working_sha_c);
 
 			onion_sha(onion, sha);
 			onion[16] = '\0';
