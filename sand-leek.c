@@ -110,9 +110,13 @@ work(void *arg) {
 			if(strncmp(b32, search, search_len) == 0) {
 				printf("Found %s.onion\n", b32);
 
+#if OPENSSL_VERSION >= 0x10100000L
 				/* update the BN e with working e */
 				BN_set_word(be, e);
 				RSA_set0_key(rsa_key, NULL, be, NULL);
+#else
+				BN_set_word(rsa_key->e, e);
+#endif
 
 				EVP_PKEY *evp_key = EVP_PKEY_new();
 				if (!EVP_PKEY_assign_RSA(evp_key, rsa_key)) {
