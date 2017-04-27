@@ -15,8 +15,8 @@ that keys are sane.
 Preliminary benching shows sand leek to be faster than some of the other
 similar tools out there when pushing work across cores.
 
-CPU(s)                                      | Max throughput | -t
---------------------------------------------+----------------+---
-2× Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz | 94 MH/s        | 16
-Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz     | 38 MH/s        | 8
-AMD A4-1200 APU with Radeon(TM) HD Graphics | 2.3 MH/s       | 2
+| CPU(s)                                      | Max throughput | -t |
+|---------------------------------------------|---------------:|---:|
+| 2× Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz |        94 MH/s | 16 |
+| Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz     |        38 MH/s |  8 |
+| AMD A4-1200 APU with Radeon(TM) HD Graphics |       2.3 MH/s |  2 |
