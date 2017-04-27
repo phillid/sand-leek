@@ -137,6 +137,16 @@ STOP:
 	return NULL;
 }
 
+void
+die_usage(const char *argv0) {
+	fprintf(stderr,
+		"usage: %s [-t threads] -s search\n"
+		"searches for keys for onion addresses beginning with `search`\n",
+		argv0
+		);
+	exit(1);
+}
+
 int
 main(int argc, char **argv) {
 	char opt = '\0';
@@ -158,7 +168,11 @@ main(int argc, char **argv) {
 	}
 
 	if (thread_count <= 0) {
-		fprintf(stderr, "thread count must be > 0\n");
+		die_usage(argv[0]);
+	}
+
+	if (search == NULL || strlen(search) <= 0) {
+		die_usage(argv[0]);
 	}
 
 	search_len = strlen(search);
