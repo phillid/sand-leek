@@ -37,14 +37,13 @@ void*
 work(void *arg) {
 	char b32[17];
 	unsigned char sha[20];
-	unsigned long e = 3;
+	unsigned int e = 0x01FFFFFF;
 	unsigned int e_be = 0;
 	unsigned char *der_data = NULL;
 	unsigned char *tmp_data = NULL;
 	size_t der_length = 0;
 	unsigned long volatile *kilo_hashes = arg;
 	unsigned long hashes = 0;
-	//	size_t last_der_length = 0;
 	BIGNUM *be = NULL;
 	RSA *rsa_key = NULL;
 	SHA_CTX sha_c;
@@ -62,8 +61,8 @@ work(void *arg) {
 		goto STOP;
 	}
 
-	//last_der_length = -1;
 	while(1) {
+		e = 0x1FFFFFFF;
 		BN_set_word(be, e);
 		if (!RSA_generate_key_ex(rsa_key, 1024, be, NULL)) {
 			fprintf(stderr, "Failed to generate RSA key\n");
@@ -80,19 +79,26 @@ work(void *arg) {
 			goto STOP;
 		}
 		tmp_data = der_data;
-		i2d_RSAPublicKey(rsa_key, &der_data);
-		free(tmp_data);
+		if (i2d_RSAPublicKey(rsa_key, &tmp_data) != der_length) {
+			fprintf(stderr, "DER formatting failed\n");
+			goto STOP;
+		}
 
 		/* core loop adapted from eschalot */
 		SHA1_Init(&sha_c);
 		SHA1_Update(&sha_c, der_data, der_length - 4);
+		free(der_data);
+		
+		e = 0x1FFFFFFF;
+		BN_set_word(be, e);
+		
 		while (e < 0xFFFFFFFF) {
 
-			memcpy(&working_sha_c, &sha_c, 40); /* FIXME magic */
+			memcpy(&working_sha_c, &sha_c, 10*sizeof(SHA_LONG)); /* FIXME magic */
 			working_sha_c.num = sha_c.num;
 
 			e_be = htobe32(e);
-			SHA1_Update(&working_sha_c, &e_be, sizeof(unsigned int));
+			SHA1_Update(&working_sha_c, &e_be, 4);
 			SHA1_Final(&sha, &working_sha_c);
 
 			onion_sha(b32, sha);
