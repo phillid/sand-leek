@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <getopt.h>
 #include <pthread.h>
 #include <semaphore.h>
@@ -162,7 +163,7 @@ main(int argc, char **argv) {
 	sem_init(&working, 0, 0);
 
 	for (i = 0; i < thread_count; i++) {
-		if (pthread_create(&workers[i], NULL, work, &khash_count[i])) {
+		if (pthread_create(&workers[i], NULL, work, (void*)&khash_count[i])) {
 			perror("pthread_create");
 			return 1;
 		}
