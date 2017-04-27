@@ -1,4 +1,4 @@
-# black garlic
+# sand leek
 ## experimental vanity onion address whatchamacallit
 
 Still early days.
