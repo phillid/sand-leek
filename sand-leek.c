@@ -103,6 +103,11 @@ work(void *arg) {
 			b32[16] = '\0';
 			if(strncmp(b32, search, search_len) == 0) {
 				printf("Found %s.onion\n", b32);
+
+				/* update the BN e with working e */
+				BN_set_word(be, e);
+				RSA_set0_key(rsa_key, NULL, be, NULL);
+
 				EVP_PKEY *evp_key = EVP_PKEY_new();
 				if (!EVP_PKEY_assign_RSA(evp_key, rsa_key)) {
 					fprintf(stderr, "EVP_PKEY assignment failed\n");
