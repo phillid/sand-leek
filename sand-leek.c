@@ -119,21 +119,31 @@ work(void *arg) {
 				printf("Found %s.onion\n", onion);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-				BN_set_word(bignum_e, e);
+				if (BN_set_word(bignum_e, e) != 1) {
+					fprintf(stderr, "BN_set_word failed\n");
+					goto STOP;
+				}
 				RSA_set0_key(rsa_key, NULL, bignum_e, NULL);
+				/* allocate what was freed by above function call */
+				bignum_e = BN_new();
 #else
 				/* much tidier to be honest */
 				BN_set_word(rsa_key->e, e);
 #endif
 
-				EVP_PKEY *evp_key = EVP_PKEY_new();
-				if (!EVP_PKEY_assign_RSA(evp_key, rsa_key)) {
-					fprintf(stderr, "EVP_PKEY assignment failed\n");
+				if (RSA_check_key(rsa_key) == 1) {
+					printf("Key valid\n");
+					EVP_PKEY *evp_key = EVP_PKEY_new();
+					if (!EVP_PKEY_assign_RSA(evp_key, rsa_key)) {
+						fprintf(stderr, "EVP_PKEY assignment failed\n");
+						goto STOP;
+					}
+					PEM_write_PrivateKey(stdout, evp_key, NULL, NULL, 0, NULL, NULL);
+					EVP_PKEY_free(evp_key);
 					goto STOP;
+				} else {
+					printf("Key invalid\n");
 				}
-				PEM_write_PrivateKey(stdout, evp_key, NULL, NULL, 0, NULL, NULL);
-				EVP_PKEY_free(evp_key);
-				goto STOP;
 			}
 			/* select next odd exponent */
 			e += 2;
