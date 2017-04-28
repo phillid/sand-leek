@@ -10,6 +10,7 @@
 #include <openssl/rsa.h>
 #include <openssl/sha.h>
 #include <openssl/pem.h>
+#include <openssl/err.h>
 
 #define EXPONENT_SIZE_BYTES   4
 #define EXPONENT_MIN          0x1FFFFFFF
