@@ -39,6 +39,61 @@ onion_sha(char output[16], unsigned char sum[20]) {
 	}
 }
 
+/* re-calculate the decryption key `d` for the given key
+ * the product of e and d must be congruent to 1, and since we are messing
+ * with e to generate our keys, we must re-calculate d */
+int
+key_update_d(RSA *rsa_key) {
+	BN_CTX *bn_ctx = NULL;
+	const BIGNUM *p = NULL;
+	const BIGNUM *q = NULL;
+	const BIGNUM *d = NULL;
+	const BIGNUM *e = NULL;
+	BIGNUM *gcd = BN_new();
+	BIGNUM *p1 = BN_new();
+	BIGNUM *q1 = BN_new();
+	BIGNUM *p1q1 = BN_new();
+	BIGNUM *lambda_n = BN_new();
+	BIGNUM *true_d = BN_new();
+	BIGNUM *true_dmp1 = BN_new();
+	BIGNUM *true_dmq1 = BN_new();
+	BIGNUM *true_iqmp = BN_new();
+
+	/* FIXME check for error */
+	bn_ctx = BN_CTX_new();
+
+	/* FIXME check for error */
+	RSA_get0_key(rsa_key, NULL, &e, &d);
+
+	/* FIXME check for error */
+	RSA_get0_factors(rsa_key, &p, &q);
+
+	BN_sub(p1, p, BN_value_one());
+	BN_sub(q1, q, BN_value_one());
+
+	BN_mul(p1q1, p1, q1, bn_ctx);
+
+	/* calculate LCM of p1,q1 with p1*q1/gcd(p1,q1) */
+	BN_gcd(gcd, p1, q1, bn_ctx);
+	BN_div(lambda_n, NULL, p1q1, gcd, bn_ctx);
+
+	BN_mod_inverse(true_d, e, lambda_n, bn_ctx);
+	BN_mod_inverse(true_iqmp, q, p, bn_ctx);
+	BN_mod(true_dmp1, true_d, p1, bn_ctx);
+	BN_mod(true_dmq1, true_d, q1, bn_ctx);
+
+	/* FIXME check for errors */
+	if (!RSA_set0_key(rsa_key, NULL, NULL, true_d)) {
+		fprintf(stderr, "setting d failed\n");
+		return 1;
+	}
+	if (!RSA_set0_crt_params(rsa_key, true_dmp1, true_dmq1, true_iqmp)) {
+		fprintf(stderr, "setting crt params failed\n");
+		return 1;
+	}
+	return 0;
+}
+
 void*
 work(void *arg) {
 	char onion[17];
@@ -130,6 +185,8 @@ work(void *arg) {
 				/* much tidier to be honest */
 				BN_set_word(rsa_key->e, e);
 #endif
+				/* FIXME check for errors */
+				key_update_d(rsa_key);
 
 				if (RSA_check_key(rsa_key) == 1) {
 					printf("Key valid\n");
@@ -142,7 +199,8 @@ work(void *arg) {
 					EVP_PKEY_free(evp_key);
 					goto STOP;
 				} else {
-					printf("Key invalid\n");
+					fprintf(stderr, "Key invalid:");
+					ERR_print_errors_fp(stderr);
 				}
 			}
 			/* select next odd exponent */
