@@ -1,6 +1,23 @@
 # sand leek
-## experimental vanity onion address whatchamacallit
+experimental vanity onion address whatchamacallit
 
+## Usage
+
+Typical usage is something like
+
+	sand-leek -s mycoolsite -t 4 > key.pem
+
+to spawn 4 worker threads each looking for a key for an address starting
+with 'mycoolsite'. It might find a private key for any of the addresses:
+
+	mycoolsite5avt44.onion
+	mycoolsiteane4hb.onion
+	mycoolsitewtetnf.onion
+	mycoolsiterkom5h.onion
+
+or a large number of other valid addresses. Beware of using too long a
+search. While you may luck out and get a key quickly, on average, it
+may take a very long time to crack a long search.
 
 ## Future work
 I have every intention to add GPU capability to sand leek.
