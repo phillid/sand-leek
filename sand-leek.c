@@ -228,6 +228,7 @@ int
 main(int argc, char **argv) {
 	int opt = '\0';
 	int thread_count = 1;
+	int loops = 0;
 	int i = 0;
 	size_t offset = 0;
 	pthread_t *workers = NULL;
@@ -285,8 +286,8 @@ main(int argc, char **argv) {
 		}
 	}
 
-	int loops = 0;
 	/* workers started; wait on one to finish */
+	loops = 0;
 	while (sem_trywait(&working) && errno == EAGAIN) {
 		sleep(1);
 		loops++;
