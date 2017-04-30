@@ -6,6 +6,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <string.h>
+#include <endian.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/sha.h>
@@ -83,6 +84,14 @@ key_update_d(RSA *rsa_key) {
 	BN_mod(true_dmp1, true_d, p1, bn_ctx);
 	BN_mod(true_dmq1, true_d, q1, bn_ctx);
 
+	/* cleanup BN structs not managed by RSA internal functions */
+	BN_clear_free(gcd);
+	BN_clear_free(p1);
+	BN_clear_free(q1);
+	BN_clear_free(p1q1);
+	BN_clear_free(lambda_n);
+	BN_CTX_free(bn_ctx);
+
 	if (!RSA_set0_key(rsa_key, NULL, NULL, true_d)) {
 		fprintf(stderr, "setting d failed\n");
 		return 1;
@@ -102,16 +111,15 @@ work(void *arg) {
 	unsigned int e_big_endian = 0;
 	unsigned char *der_data = NULL;
 	unsigned char *tmp_data = NULL;
-	size_t der_length = 0;
+	ssize_t der_length = 0;
 	unsigned long volatile *kilo_hashes = arg;
 	unsigned long hashes = 0;
 	BIGNUM *bignum_e = NULL;
-	RSA *rsa_key = NULL;
 	SHA_CTX sha_c;
 	SHA_CTX working_sha_c;
 	int sem_val = 0;
+	RSA *rsa_key = RSA_new();
 
-	rsa_key = RSA_new();
 	if (!rsa_key) {
 		fprintf(stderr, "Failed to allocate RSA key\n");
 		goto STOP;
@@ -232,7 +240,6 @@ main(int argc, char **argv) {
 	size_t offset = 0;
 	pthread_t *workers = NULL;
 	unsigned long volatile *khash_count = NULL;
-	unsigned long khashes = 0;
 
 	while ((opt = getopt(argc, argv, "t:s:")) != -1) {
 		switch (opt) {
@@ -273,6 +280,7 @@ main(int argc, char **argv) {
 	khash_count = calloc(thread_count, sizeof(unsigned long));
 	if (!khash_count) {
 		perror("hash count array calloc");
+		free(workers);
 		return 1;
 	}
 
@@ -288,9 +296,9 @@ main(int argc, char **argv) {
 	/* workers started; wait on one to finish */
 	loops = 0;
 	while (sem_trywait(&working) && errno == EAGAIN) {
+		unsigned long khashes = 0;
 		sleep(1);
 		loops++;
-		khashes = 0;
 		/* approximate hashes per second */
 		for (i = 0; i < thread_count; i++) {
 			khashes += khash_count[i];
