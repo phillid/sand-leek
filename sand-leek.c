@@ -172,7 +172,7 @@ work(void *arg) {
 					goto STOP;
 			}
 			if(strncmp(onion, search, search_len) == 0) {
-				printf("Found %s.onion\n", onion);
+				fprintf(stderr, "Found %s.onion\n", onion);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 				if (BN_set_word(bignum_e, e) != 1) {
@@ -190,7 +190,7 @@ work(void *arg) {
 				key_update_d(rsa_key);
 
 				if (RSA_check_key(rsa_key) == 1) {
-					printf("Key valid\n");
+					fprintf(stderr, "Key valid\n");
 					EVP_PKEY *evp_key = EVP_PKEY_new();
 					if (!EVP_PKEY_assign_RSA(evp_key, rsa_key)) {
 						fprintf(stderr, "EVP_PKEY assignment failed\n");
@@ -207,7 +207,7 @@ work(void *arg) {
 			/* select next odd exponent */
 			e += 2;
 		}
-		printf("Wrap\n");
+		fprintf(stderr, "Wrap\n");
 	}
 STOP:
 	sem_post(&working);
@@ -296,10 +296,13 @@ main(int argc, char **argv) {
 		for (i = 0; i < thread_count; i++) {
 			khashes += khash_count[i];
 		}
-		printf("Average rate: %.2f kH/s (%.2f kH/s/thread)\n",
+		fprintf(stderr, "Average rate: %.2f kH/s (%.2f kH/s/thread)\r",
 			(double)khashes / loops,
 			((double)khashes / loops) / thread_count);
 	}
+
+	/* line feed to finish off carriage return from hashrate fprintf */
+	fputc('\n', stderr);
 
 	for (i = 0; i < thread_count; i++) {
 		pthread_join(workers[i], NULL);
