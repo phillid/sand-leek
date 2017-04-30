@@ -45,33 +45,33 @@ onion_sha(char output[16], unsigned char sum[20]) {
  * with e to generate our keys, we must re-calculate d */
 int
 key_update_d(RSA *rsa_key) {
-	BN_CTX *bn_ctx = NULL;
 	const BIGNUM *p = NULL;
 	const BIGNUM *q = NULL;
 	const BIGNUM *d = NULL;
 	const BIGNUM *e = NULL;
-	BIGNUM *gcd = BN_new();
-	BIGNUM *p1 = BN_new();
-	BIGNUM *q1 = BN_new();
-	BIGNUM *p1q1 = BN_new();
-	BIGNUM *lambda_n = BN_new();
-	BIGNUM *true_d = BN_new();
-	BIGNUM *true_dmp1 = BN_new();
-	BIGNUM *true_dmq1 = BN_new();
-	BIGNUM *true_iqmp = BN_new();
+	BIGNUM *gcd = BN_secure_new();
+	BIGNUM *p1 = BN_secure_new();
+	BIGNUM *q1 = BN_secure_new();
+	BIGNUM *p1q1 = BN_secure_new();
+	BIGNUM *lambda_n = BN_secure_new();
+	BIGNUM *true_d = BN_secure_new();
+	BIGNUM *true_dmp1 = BN_secure_new();
+	BIGNUM *true_dmq1 = BN_secure_new();
+	BIGNUM *true_iqmp = BN_secure_new();
+	BN_CTX *bn_ctx = BN_CTX_secure_new();
 
-	/* FIXME check for error */
-	bn_ctx = BN_CTX_new();
+	if (!(bn_ctx && gcd && p1 && q1 && p1q1 && lambda_n && true_d &&
+	    true_dmp1 && true_dmq1 && true_iqmp)) {
+		perror("bignum or bignum context allocation");
+		return 1;
+	}
 
-	/* FIXME check for error */
 	RSA_get0_key(rsa_key, NULL, &e, &d);
-
-	/* FIXME check for error */
 	RSA_get0_factors(rsa_key, &p, &q);
 
+	/* calculate p-1 and q-1 and their product */
 	BN_sub(p1, p, BN_value_one());
 	BN_sub(q1, q, BN_value_one());
-
 	BN_mul(p1q1, p1, q1, bn_ctx);
 
 	/* calculate LCM of p1,q1 with p1*q1/gcd(p1,q1) */
@@ -83,7 +83,6 @@ key_update_d(RSA *rsa_key) {
 	BN_mod(true_dmp1, true_d, p1, bn_ctx);
 	BN_mod(true_dmq1, true_d, q1, bn_ctx);
 
-	/* FIXME check for errors */
 	if (!RSA_set0_key(rsa_key, NULL, NULL, true_d)) {
 		fprintf(stderr, "setting d failed\n");
 		return 1;
