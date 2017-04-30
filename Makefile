@@ -1,4 +1,4 @@
-CFLAGS += -Ofast
+CFLAGS += -O2 -finline
 LDFLAGS += -lssl -lcrypto -lpthread
 
 all: sand-leek
