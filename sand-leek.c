@@ -229,6 +229,7 @@ main(int argc, char **argv) {
 	int opt = '\0';
 	int thread_count = 1;
 	int i = 0;
+	size_t offset = 0;
 	pthread_t *workers = NULL;
 	unsigned long volatile *khash_count = NULL;
 	unsigned long khashes = 0;
@@ -253,6 +254,15 @@ main(int argc, char **argv) {
 	}
 
 	search_len = strlen(search);
+
+	if ((offset = strspn(search, base32_lookup)) != search_len) {
+		fprintf(stderr,
+			"Error: search contains non-base-32 character(s): %c\n"
+			"I cannot search for something that will never occur\n",
+			search[offset]
+		);
+		return 1;
+	}
 
 	workers = calloc(thread_count, sizeof(pthread_t));
 	if (!workers) {
