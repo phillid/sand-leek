@@ -19,9 +19,9 @@
 
 #define RSA_KEY_BITS          1024
 
-const static char base32_lookup[] = "abcdefghijklmnopqrstuvwxyz234567";
+static const char base32_lookup[] = "abcdefghijklmnopqrstuvwxyz234567";
 static char *search;
-static int search_len;
+static size_t search_len;
 sem_t working;
 
 void
