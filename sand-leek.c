@@ -194,8 +194,10 @@ work(void *arg) {
 				/* much tidier to be honest */
 				BN_set_word(rsa_key->e, e);
 #endif
-				/* FIXME check for errors */
-				key_update_d(rsa_key);
+				if (key_update_d(rsa_key)) {
+					printf("Error updating d component of RSA key, stop.\n");
+					goto STOP;
+				}
 
 				if (RSA_check_key(rsa_key) == 1) {
 					fprintf(stderr, "Key valid\n");
