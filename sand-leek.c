@@ -12,6 +12,7 @@
 #include <openssl/sha.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
+#define _GNU_SOURCE
 
 #define EXPONENT_SIZE_BYTES   4
 #define EXPONENT_MIN          0x1FFFFFFF
@@ -46,10 +47,6 @@ onion_sha(char output[16], unsigned char sum[20]) {
  * with e to generate our keys, we must re-calculate d */
 int
 key_update_d(RSA *rsa_key) {
-	const BIGNUM *p = NULL;
-	const BIGNUM *q = NULL;
-	const BIGNUM *d = NULL;
-	const BIGNUM *e = NULL;
 	BIGNUM *gcd = BN_secure_new();
 	BIGNUM *p1 = BN_secure_new();
 	BIGNUM *q1 = BN_secure_new();
@@ -60,6 +57,11 @@ key_update_d(RSA *rsa_key) {
 	BIGNUM *true_dmq1 = BN_secure_new();
 	BIGNUM *true_iqmp = BN_secure_new();
 	BN_CTX *bn_ctx = BN_CTX_secure_new();
+	BN_CTX_start(bn_ctx);
+	const BIGNUM *p = BN_CTX_get(bn_ctx);
+	const BIGNUM *q = BN_CTX_get(bn_ctx);
+	const BIGNUM *d = BN_CTX_get(bn_ctx);
+	const BIGNUM *e = BN_CTX_get(bn_ctx);
 
 	if (!(bn_ctx && gcd && p1 && q1 && p1q1 && lambda_n && true_d &&
 	    true_dmp1 && true_dmq1 && true_iqmp)) {
@@ -90,6 +92,8 @@ key_update_d(RSA *rsa_key) {
 	BN_clear_free(q1);
 	BN_clear_free(p1q1);
 	BN_clear_free(lambda_n);
+
+	BN_CTX_end(bn_ctx);
 	BN_CTX_free(bn_ctx);
 
 	if (!RSA_set0_key(rsa_key, NULL, NULL, true_d)) {
@@ -115,18 +119,17 @@ work(void *arg) {
 	unsigned long volatile *kilo_hashes = arg;
 	unsigned long hashes = 0;
 	BIGNUM *bignum_e = NULL;
-	RSA *rsa_key = NULL;
+	RSA *rsa_key = RSA_new();
 	SHA_CTX sha_c;
 	SHA_CTX working_sha_c;
 	int sem_val = 0;
 
-	rsa_key = RSA_new();
 	if (!rsa_key) {
 		fprintf(stderr, "Failed to allocate RSA key\n");
 		goto STOP;
 	}
 
-	bignum_e = BN_new();
+	bignum_e = BN_secure_new();
 	if (!bignum_e) {
 		fprintf(stderr, "Failed to allocate bignum for exponent\n");
 		goto STOP;
@@ -180,19 +183,18 @@ work(void *arg) {
 					goto STOP;
 			}
 			if(strncmp(onion, search, search_len) == 0) {
-				fprintf(stderr, "Found %s.onion\n", onion);
-
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-				if (BN_set_word(bignum_e, e) != 1) {
-					fprintf(stderr, "BN_set_word failed\n");
+				if (!(bignum_e = BN_bin2bn((uint8_t *)&e_big_endian, EXPONENT_SIZE_BYTES, NULL))) {
+					fprintf(stderr, "%s\n", "Converting e to BIGNUM failed!");
 					goto STOP;
 				}
 				RSA_set0_key(rsa_key, NULL, bignum_e, NULL);
-				/* allocate what was freed by above function call */
-				bignum_e = BN_new();
 #else
 				/* much tidier to be honest */
-				BN_set_word(rsa_key->e, e);
+				if (!BN_bin2bn((uint8_t *)&e_big_endian,  EXPONENT_SIZE_BYTES, rsa_key->e)) {
+					fprintf(stderr, "%s\n", "Setting e in RSA key failed!");
+					goto STOP;
+				}
 #endif
 				if (key_update_d(rsa_key)) {
 					printf("Error updating d component of RSA key, stop.\n");
@@ -200,14 +202,30 @@ work(void *arg) {
 				}
 
 				if (RSA_check_key(rsa_key) == 1) {
-					fprintf(stderr, "Key valid\n");
-					EVP_PKEY *evp_key = EVP_PKEY_new();
-					if (!EVP_PKEY_assign_RSA(evp_key, rsa_key)) {
-						fprintf(stderr, "EVP_PKEY assignment failed\n");
+					uint8_t *dst;
+					BUF_MEM *buf;
+					BIO *b_key = BIO_new(BIO_s_mem());
+
+					PEM_write_bio_RSAPrivateKey(b_key, rsa_key, NULL, NULL, 0, NULL, NULL);
+					BIO_get_mem_ptr(b_key, &buf);
+					(void)BIO_set_close(b_key, BIO_NOCLOSE);
+					BIO_free(b_key);
+
+					if (!(dst = (uint8_t *)malloc(buf->length + 1))) {
+						fprintf(stderr,"%s","malloc(buf->length + 1) failed!");
 						goto STOP;
 					}
-					PEM_write_PrivateKey(stdout, evp_key, NULL, NULL, 0, NULL, NULL);
-					EVP_PKEY_free(evp_key);
+
+					memcpy(dst, buf->data, buf->length);
+					dst[buf->length] = '\0';
+
+					fprintf(stderr, "\n%s\n", "Valid key found!");
+					printf("%s\n", "----------------------------------------------------------------");
+					fprintf(stderr, "Found %s.onion\n", onion);
+					printf("%s\n", "----------------------------------------------------------------");
+					printf("%s\n", dst);
+					printf("%s\n", "----------------------------------------------------------------");
+
 					goto STOP;
 				} else {
 					fprintf(stderr, "Key invalid:");
@@ -220,6 +238,8 @@ work(void *arg) {
 		fprintf(stderr, "Wrap\n");
 	}
 STOP:
+	/* If rsa_key is NULL this is a noop */
+	RSA_free(rsa_key);
 	sem_post(&working);
 	return NULL;
 }
