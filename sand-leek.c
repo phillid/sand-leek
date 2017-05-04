@@ -234,16 +234,38 @@ die_usage(const char *argv0) {
 	exit(1);
 }
 
+void
+monitor_progress(unsigned long volatile *khash_count, int thread_count) {
+	int loops = 0;
+	int i = 0;
+	unsigned long khashes = 0;
+
+	loops = 0;
+	while (sem_trywait(&working) && errno == EAGAIN) {
+		sleep(1);
+		loops++;
+		khashes = 0;
+		/* approximate hashes per second */
+		for (i = 0; i < thread_count; i++) {
+			khashes += khash_count[i];
+		}
+		fprintf(stderr, "Average rate: %.2f kH/s (%.2f kH/s/thread)\r",
+			(double)khashes / loops,
+			((double)khashes / loops) / thread_count);
+	}
+
+	/* line feed to finish off carriage return from hashrate fprintf */
+	fputc('\n', stderr);
+}
+
 int
 main(int argc, char **argv) {
 	int opt = '\0';
 	int thread_count = 1;
-	int loops = 0;
 	int i = 0;
 	size_t offset = 0;
 	pthread_t *workers = NULL;
 	unsigned long volatile *khash_count = NULL;
-	unsigned long khashes = 0;
 
 	while ((opt = getopt(argc, argv, "t:s:")) != -1) {
 		switch (opt) {
@@ -297,23 +319,7 @@ main(int argc, char **argv) {
 		}
 	}
 
-	/* workers started; wait on one to finish */
-	loops = 0;
-	while (sem_trywait(&working) && errno == EAGAIN) {
-		sleep(1);
-		loops++;
-		khashes = 0;
-		/* approximate hashes per second */
-		for (i = 0; i < thread_count; i++) {
-			khashes += khash_count[i];
-		}
-		fprintf(stderr, "Average rate: %.2f kH/s (%.2f kH/s/thread)\r",
-			(double)khashes / loops,
-			((double)khashes / loops) / thread_count);
-	}
-
-	/* line feed to finish off carriage return from hashrate fprintf */
-	fputc('\n', stderr);
+	monitor_progress(khash_count, thread_count);
 
 	for (i = 0; i < thread_count; i++) {
 		pthread_join(workers[i], NULL);
