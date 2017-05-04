@@ -235,23 +235,23 @@ die_usage(const char *argv0) {
 }
 
 void
-monitor_progress(unsigned long volatile *khash_count, int thread_count) {
+monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	int loops = 0;
 	int i = 0;
-	unsigned long khashes = 0;
+	unsigned long total_khashes = 0;
 
 	loops = 0;
 	while (sem_trywait(&working) && errno == EAGAIN) {
 		sleep(1);
 		loops++;
-		khashes = 0;
+		total_khashes = 0;
 		/* approximate hashes per second */
 		for (i = 0; i < thread_count; i++) {
-			khashes += khash_count[i];
+			total_khashes += khashes[i];
 		}
 		fprintf(stderr, "Average rate: %.2f kH/s (%.2f kH/s/thread)\r",
-			(double)khashes / loops,
-			((double)khashes / loops) / thread_count);
+			(double)total_khashes / loops,
+			((double)total_khashes / loops) / thread_count);
 	}
 
 	/* line feed to finish off carriage return from hashrate fprintf */
@@ -265,7 +265,7 @@ main(int argc, char **argv) {
 	int i = 0;
 	size_t offset = 0;
 	pthread_t *workers = NULL;
-	unsigned long volatile *khash_count = NULL;
+	unsigned long volatile *khashes = NULL;
 
 	while ((opt = getopt(argc, argv, "t:s:")) != -1) {
 		switch (opt) {
@@ -303,8 +303,8 @@ main(int argc, char **argv) {
 		return 1;
 	}
 
-	khash_count = calloc(thread_count, sizeof(unsigned long));
-	if (!khash_count) {
+	khashes = calloc(thread_count, sizeof(unsigned long));
+	if (!khashes) {
 		perror("hash count array calloc");
 		free(workers);
 		return 1;
@@ -313,13 +313,13 @@ main(int argc, char **argv) {
 	sem_init(&working, 0, 0);
 
 	for (i = 0; i < thread_count; i++) {
-		if (pthread_create(&workers[i], NULL, work, (void*)&khash_count[i])) {
+		if (pthread_create(&workers[i], NULL, work, (void*)&khashes[i])) {
 			perror("pthread_create");
 			return 1;
 		}
 	}
 
-	monitor_progress(khash_count, thread_count);
+	monitor_progress(khashes, thread_count);
 
 	for (i = 0; i < thread_count; i++) {
 		pthread_join(workers[i], NULL);
