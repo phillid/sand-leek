@@ -228,17 +228,21 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	int loops = 0;
 	int i = 0;
 	unsigned long total_khashes = 0;
+	unsigned long last_total_khashes = 0;
 
 	loops = 0;
 	while (sem_trywait(&working) && errno == EAGAIN) {
 		sleep(1);
 		loops++;
+		last_total_khashes = total_khashes;
 		total_khashes = 0;
 		/* approximate hashes per second */
 		for (i = 0; i < thread_count; i++) {
 			total_khashes += khashes[i];
 		}
-		fprintf(stderr, "Average rate: %.2f kH/s (%.2f kH/s/thread)\r",
+		fprintf(stderr, "Last second: %lu kH/s (%.2f kH/s/thread) | Average: %.2f kH/s (%.2f kH/s/thread)\r",
+			total_khashes - last_total_khashes,
+			(double)(total_khashes - last_total_khashes) / thread_count,
 			(double)total_khashes / loops,
 			((double)total_khashes / loops) / thread_count);
 	}
