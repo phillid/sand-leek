@@ -290,13 +290,13 @@ main(int argc, char **argv) {
 		return 1;
 	}
 
-	workers = calloc(thread_count, sizeof(pthread_t));
+	workers = calloc(thread_count, sizeof(workers[0]));
 	if (!workers) {
 		perror("worker thread calloc");
 		return 1;
 	}
 
-	khashes = calloc(thread_count, sizeof(unsigned long));
+	khashes = calloc(thread_count, sizeof(khashes[0]));
 	if (!khashes) {
 		perror("hash count array calloc");
 		free(workers);
