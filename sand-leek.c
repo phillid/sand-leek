@@ -13,33 +13,17 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
+#include "onion_base32.h"
+
 #define EXPONENT_SIZE_BYTES   4
 #define EXPONENT_MIN          0x1FFFFFFF
 #define EXPONENT_MAX          0xFFFFFFFF
 
 #define RSA_KEY_BITS          1024
 
-static const char base32_lookup[] = "abcdefghijklmnopqrstuvwxyz234567";
 static char *search;
 static size_t search_len;
 sem_t working;
-
-void
-onion_sha(char output[16], unsigned char sum[20]) {
-	size_t c = 0;
-	int i = 0;
-
-	for (i = 0; i < 10; i+=5) {
-		output[c++] = base32_lookup[sum[i] >> 3];
-		output[c++] = base32_lookup[((sum[i] & 0x07) << 2) | (sum[i+1] >> 6)];
-		output[c++] = base32_lookup[(sum[i+1] >> 1) & 0x1F];
-		output[c++] = base32_lookup[((sum[i+1] & 1) << 4) | (sum[i+2] >> 4)];
-		output[c++] = base32_lookup[((sum[i+2] & 0x0F) << 1) | ((sum[i+3] & 0x80) >> 7)];
-		output[c++] = base32_lookup[(sum[i+3] >> 2) & 0x1F];
-		output[c++] = base32_lookup[((sum[i+3] & 0x03) << 3) | (sum[i+4] >> 5)];
-		output[c++] = base32_lookup[sum[i+4] & 0x1F];
-	}
-}
 
 /* re-calculate the decryption key `d` for the given key
  * the product of e and d must be congruent to 1, and since we are messing
@@ -168,7 +152,12 @@ work(void *arg) {
 			SHA1_Update(&working_sha_c, &e_big_endian, EXPONENT_SIZE_BYTES);
 			SHA1_Final((unsigned char*)&sha, &working_sha_c);
 
-			onion_sha(onion, sha);
+#ifdef AVX_ONION_BASE32
+			onion_base32_avx(onion, sha);
+#else
+			onion_base32(onion, sha);
+#endif
+
 			onion[16] = '\0';
 
 			if (hashes++ >= 1000) {
@@ -288,7 +277,7 @@ main(int argc, char **argv) {
 
 	search_len = strlen(search);
 
-	if ((offset = strspn(search, base32_lookup)) != search_len) {
+	if ((offset = check_base32(search))) {
 		fprintf(stderr,
 			"Error: search contains non-base-32 character(s): %c\n"
 			"I cannot search for something that will never occur\n",
