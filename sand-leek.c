@@ -15,6 +15,8 @@
 
 #include "onion_base32.h"
 
+#define VERSION "0.5"
+
 #define EXPONENT_SIZE_BYTES   4
 #define EXPONENT_MIN          0x1FFFFFFF
 #define EXPONENT_MAX          0xFFFFFFFF
@@ -251,6 +253,16 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	fputc('\n', stderr);
 }
 
+void
+show_version(void) {
+#ifdef AVX_ONION_BASE32
+# define EXTENSIONS "AVX Base32 Algorithm"
+#else
+# define EXTENSIONS "None"
+#endif
+	printf("sand-leek "VERSION" built with extensions: "EXTENSIONS"\n");
+}
+
 int
 main(int argc, char **argv) {
 	int opt = '\0';
@@ -260,8 +272,11 @@ main(int argc, char **argv) {
 	pthread_t *workers = NULL;
 	unsigned long volatile *khashes = NULL;
 
-	while ((opt = getopt(argc, argv, "t:s:")) != -1) {
+	while ((opt = getopt(argc, argv, "t:s:V")) != -1) {
 		switch (opt) {
+		case 'V':
+			show_version();
+			return 0;
 		case 't':
 			thread_count = atoi(optarg);
 			break;
