@@ -225,7 +225,6 @@ work(void *arg) {
 			/* select next odd exponent */
 			e += 2;
 		}
-		fprintf(stderr, "Wrap\n");
 	}
 STOP:
 	sem_post(&working);
