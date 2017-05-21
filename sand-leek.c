@@ -155,7 +155,7 @@ work(void *arg) {
 			SHA1_Final((unsigned char*)&sha, &working_sha_c);
 
 #ifdef SSSE3_ONION_BASE32
-			onion_base32_avx(onion, sha);
+			onion_base32_ssse3(onion, sha);
 #else
 			onion_base32(onion, sha);
 #endif

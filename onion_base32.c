@@ -46,7 +46,7 @@ onion_base32(char output[16], unsigned char sum[20]) {
  * Somewhat inspired by http://www.alfredklomp.com/programming/sse-base64/
  */
 void
-onion_base32_avx(char output[16], unsigned char sum[20]) {
+onion_base32_ssse3(char output[16], unsigned char sum[20]) {
 	__m128i res;
 	__m128i ssum;
 	__m128i masklow5;
