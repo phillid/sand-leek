@@ -92,6 +92,9 @@ key_update_d(RSA *rsa_key) {
 void*
 work(void *arg) {
 	char onion[17];
+#ifdef SSSE3_ONION_BASE32
+	char check_onion[17]; /* buffer for onion address used in sanity check */
+#endif
 	unsigned char sha[20];
 	unsigned long e = EXPONENT_MIN;
 	unsigned int e_big_endian = 0;
@@ -171,6 +174,20 @@ work(void *arg) {
 					goto STOP;
 			}
 			if(strncmp(onion, search, search_len) == 0) {
+#ifdef SSSE3_ONION_BASE32
+				/* sanity check: my SSE algorithm is still experimental, so
+				  * check it with old trusty */
+				onion_base32(check_onion, sha);
+				check_onion[16] = '\0';
+				if (strcmp(check_onion, onion)) {
+					fprintf(stderr,
+						"BUG: Discrepancy between SSE algorithm and old trusty\n"
+						"SSE gave me %s, but trusty says it should be %s\n"
+						"Please report this to the developer\n",
+						onion, check_onion);
+						continue;
+				}
+#endif
 				fprintf(stderr, "Found %s.onion\n", onion);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
