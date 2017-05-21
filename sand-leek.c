@@ -154,7 +154,7 @@ work(void *arg) {
 			SHA1_Update(&working_sha_c, &e_big_endian, EXPONENT_SIZE_BYTES);
 			SHA1_Final((unsigned char*)&sha, &working_sha_c);
 
-#ifdef AVX_ONION_BASE32
+#ifdef SSSE3_ONION_BASE32
 			onion_base32_avx(onion, sha);
 #else
 			onion_base32(onion, sha);
@@ -255,8 +255,8 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 
 void
 show_version(void) {
-#ifdef AVX_ONION_BASE32
-# define EXTENSIONS "AVX Base32 Algorithm"
+#ifdef SSSE3_ONION_BASE32
+# define EXTENSIONS "SSSE3 Base32 Algorithm"
 #else
 # define EXTENSIONS "None"
 #endif

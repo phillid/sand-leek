@@ -35,10 +35,10 @@ onion_base32(char output[16], unsigned char sum[20]) {
 	}
 }
 
-#ifdef AVX_ONION_BASE32
-#include <immintrin.h>
+#ifdef SSSE3_ONION_BASE32
+#include <tmmintrin.h>
 
-/* A slightly-parallel base32 algorithm using AVX
+/* A slightly-parallel base32 algorithm using SSSE3
  * Note: This is not a general base32 algorithm; it outputs only the
  * first 16 base32 symbols of the input buffer, using only the first
  * 20 bytes of that buffer.
@@ -99,4 +99,4 @@ onion_base32_avx(char output[16], unsigned char sum[20]) {
 
 	_mm_storeu_si128((__m128i*)output, l|n);
 }
-#endif /* ifdef AVX_ONION_BASE32 */
+#endif /* ifdef SSSE3_ONION_BASE32 */
