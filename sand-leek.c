@@ -92,7 +92,7 @@ key_update_d(RSA *rsa_key) {
 void*
 work(void *arg) {
 	char onion[17];
-#ifdef SSSE3_ONION_BASE32
+#ifdef __SSSE3__
 	char check_onion[17]; /* buffer for onion address used in sanity check */
 #endif
 	unsigned char sha[20];
@@ -157,7 +157,7 @@ work(void *arg) {
 			SHA1_Update(&working_sha_c, &e_big_endian, EXPONENT_SIZE_BYTES);
 			SHA1_Final((unsigned char*)&sha, &working_sha_c);
 
-#ifdef SSSE3_ONION_BASE32
+#ifdef __SSSE3__
 			onion_base32_ssse3(onion, sha);
 #else
 			onion_base32(onion, sha);
@@ -174,7 +174,7 @@ work(void *arg) {
 					goto STOP;
 			}
 			if(strncmp(onion, search, search_len) == 0) {
-#ifdef SSSE3_ONION_BASE32
+#ifdef __SSSE3__
 				/* sanity check: my SSE algorithm is still experimental, so
 				  * check it with old trusty */
 				onion_base32(check_onion, sha);
@@ -271,7 +271,7 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 
 void
 show_version(void) {
-#ifdef SSSE3_ONION_BASE32
+#ifdef __SSSE3__
 # define EXTENSIONS "SSSE3 Base32 Algorithm"
 #else
 # define EXTENSIONS "None"

@@ -35,7 +35,7 @@ onion_base32(char output[16], unsigned char sum[20]) {
 	}
 }
 
-#ifdef SSSE3_ONION_BASE32
+#ifdef __SSSE3__
 #include <tmmintrin.h>
 
 /* A slightly-parallel base32 algorithm using SSSE3
@@ -99,4 +99,4 @@ onion_base32_ssse3(char output[16], unsigned char sum[20]) {
 
 	_mm_storeu_si128((__m128i*)output, l|n);
 }
-#endif /* ifdef SSSE3_ONION_BASE32 */
+#endif /* ifdef __SSSE3__ */
