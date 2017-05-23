@@ -10,7 +10,7 @@ check_base32(char *subject) {
 	if ((offset = strspn(subject, base32_lookup)) != strlen(subject)) {
 		return offset;
 	}
-	return 0;
+	return -1;
 }
 
 /* Simple and reliable base32 algorithm - "old trusty"

@@ -284,7 +284,7 @@ main(int argc, char **argv) {
 	int opt = '\0';
 	int thread_count = 1;
 	int i = 0;
-	size_t offset = 0;
+	ssize_t offset = 0;
 	pthread_t *workers = NULL;
 	unsigned long volatile *khashes = NULL;
 
@@ -312,7 +312,7 @@ main(int argc, char **argv) {
 
 	search_len = strlen(search);
 
-	if ((offset = check_base32(search))) {
+	if ((offset = check_base32(search)) >= 0) {
 		fprintf(stderr,
 			"Error: search contains non-base-32 character(s): %c\n"
 			"I cannot search for something that will never occur\n",
