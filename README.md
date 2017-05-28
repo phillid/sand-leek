@@ -29,13 +29,6 @@ that keys are sane.
 Preliminary benching shows sand leek to be faster than some of the other
 similar tools out there when pushing work across cores.
 
-I have also written a "slightly parallel" base32 algorithm which uses
-SSSE3 if support is given from the compiler and target platform.
-Preliminary benchmarks seem to indicate that this gives a performance
-benefit of between roughly 3% and 30%. Although, these higher
-performance gains seem to be only when running at a reduced worker
-thread count.
-
 | CPU(s)                                      | Max throughput | -t |
 |---------------------------------------------|---------------:|---:|
 | 2× Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz |     103.3 MH/s | 32 |
