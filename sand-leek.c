@@ -177,25 +177,7 @@ work(void *arg) {
 					goto STOP;
 			}
 
-			int raw_len = 0;
-			switch (search_len) {
-			case  1: raw_len = 0; break;
-			case  2: raw_len = 1; break;
-			case  3: raw_len = 1; break;
-			case  4: raw_len = 2; break;
-			case  5: raw_len = 3; break;
-			case  6: raw_len = 3; break;
-			case  7: raw_len = 4; break;
-			case  8: raw_len = 5; break;
-			case  9: raw_len = 5; break;
-			case 10: raw_len = 6; break;
-			case 11: raw_len = 6; break;
-			case 12: raw_len = 7; break;
-			case 13: raw_len = 8; break;
-			case 14: raw_len = 8; break;
-			case 15: raw_len = 9; break;
-			case 16: raw_len = 10; break;
-			}
+			int raw_len = (search_len*10)/16;
 			if (memcmp(sha, search_raw, raw_len) == 0) {
 				/* check the remaining partial byte */
 				switch (search_len) {
