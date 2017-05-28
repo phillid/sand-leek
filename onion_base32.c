@@ -37,17 +37,16 @@ onion_base32(char output[16], unsigned char sum[20]) {
 
 unsigned char
 base32_dec_single(char b) {
-	int ret = 0;
+	if (b >= 'a' && b <= 'z')
+		return b - 'a';
+	else if (b >= '2' && b <= '7')
+		return b - '2' + 26;
 
-	if (b < 'a')
-		ret = b - '2' + 26;
-	else
-		ret = b - 'a';
-
-	printf("%d «%d»\n", ret, b);
-	return ret;
+	return 0;
 }
 
+/* Simple algorithm to decode a 16-byte base32 sequence to the 10 bytes
+ * it represents, placing the result in dec */
 void
 onion_base32_dec(unsigned char dec[10], char base32[16])
 {
@@ -61,70 +60,4 @@ onion_base32_dec(unsigned char dec[10], char base32[16])
 		dec[c++] = base32_dec_single(base32[i+4]) << 7 | base32_dec_single(base32[i+5]) << 2 | base32_dec_single(base32[i+6]) >> 3;
 		dec[c++] = base32_dec_single(base32[i+7]) | base32_dec_single(base32[i+6]) << 5;
 	}
-
 }
-#ifdef __SSSE3__
-#include <tmmintrin.h>
-
-/* A slightly-parallel base32 algorithm using SSSE3
- * Note: This is not a general base32 algorithm; it outputs only the
- * first 16 base32 symbols of the input buffer, using only the first
- * 20 bytes of that buffer.
- *
- * Somewhat inspired by http://www.alfredklomp.com/programming/sse-base64/
- */
-void
-onion_base32_ssse3(char output[16], unsigned char sum[20]) {
-	__m128i res;
-	__m128i ssum;
-	__m128i masklow5;
-	__m128i lmask, l;
-	__m128i nmask, n;
-
-	ssum = _mm_loadu_si128((__m128i*)sum);
-
-	/* FIXME seems a little hacky */
-	masklow5 = _mm_set1_epi32(0x1F000000);
-	masklow5 = _mm_slli_epi64(masklow5, 32);
-
-	ssum = _mm_shuffle_epi8(ssum,
-		_mm_setr_epi8(9,9,9,9,8,7,6,5,4,4,4,4,3,2,1,0 ));
-
-	/* remember how I said "slightly parallel" ? */
-	res = _mm_srli_epi64(ssum, 3) & masklow5;
-	masklow5 = _mm_srli_epi64(masklow5, 8);
-
-	res |= _mm_srli_epi64(ssum, 6) & masklow5;
-	masklow5 = _mm_srli_epi64(masklow5, 8);
-
-	res |= _mm_srli_epi64(ssum, 9) & masklow5;
-	masklow5 = _mm_srli_epi64(masklow5, 8);
-
-	res |= _mm_srli_epi64(ssum, 12) & masklow5;
-	masklow5 = _mm_srli_epi64(masklow5, 8);
-
-	res |= _mm_srli_epi64(ssum, 15) & masklow5;
-	masklow5 = _mm_srli_epi64(masklow5, 8);
-
-	res |= _mm_srli_epi64(ssum, 18) & masklow5;
-	masklow5 = _mm_srli_epi64(masklow5, 8);
-
-	res |= _mm_srli_epi64(ssum, 21) & masklow5;
-	masklow5 = _mm_srli_epi64(masklow5, 8);
-
-	res |= _mm_srli_epi64(ssum, 24) & masklow5;
-	masklow5 = _mm_srli_epi64(masklow5, 8);
-
-
-	res = _mm_shuffle_epi8(res,
-		_mm_setr_epi8(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0));
-
-	lmask = _mm_cmplt_epi8(res, _mm_set1_epi8(26));
-	nmask = _mm_andnot_si128(lmask, _mm_cmplt_epi8(res, _mm_set1_epi8(32)));
-
-	l = lmask & _mm_add_epi8(res, _mm_set1_epi8('a'));
-	n = nmask & _mm_add_epi8(res, _mm_set1_epi8('2' - 26));
-
-	_mm_storeu_si128((__m128i*)output, l|n);
-}
-#endif /* ifdef __SSSE3__ */
