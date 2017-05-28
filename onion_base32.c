@@ -35,6 +35,34 @@ onion_base32(char output[16], unsigned char sum[20]) {
 	}
 }
 
+unsigned char
+base32_dec_single(char b) {
+	int ret = 0;
+
+	if (b < 'a')
+		ret = b - '2' + 26;
+	else
+		ret = b - 'a';
+
+	printf("%d «%d»\n", ret, b);
+	return ret;
+}
+
+void
+onion_base32_dec(unsigned char dec[10], char base32[16])
+{
+	size_t c = 0;
+	size_t i = 0;
+
+	for (i = 0; i < 16; i += 8) {
+		dec[c++] = base32_dec_single(base32[i]) << 3 | base32_dec_single(base32[i+1]) >> 2;
+		dec[c++] = base32_dec_single(base32[i+1]) << 6 | base32_dec_single(base32[i+2]) << 1 | base32_dec_single(base32[i+3]) >> 4;
+		dec[c++] = base32_dec_single(base32[i+3]) << 4 | base32_dec_single(base32[i+4]) >> 1;
+		dec[c++] = base32_dec_single(base32[i+4]) << 7 | base32_dec_single(base32[i+5]) << 2 | base32_dec_single(base32[i+6]) >> 3;
+		dec[c++] = base32_dec_single(base32[i+7]) | base32_dec_single(base32[i+6]) << 5;
+	}
+
+}
 #ifdef __SSSE3__
 #include <tmmintrin.h>
 
