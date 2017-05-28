@@ -31,11 +31,11 @@ similar tools out there when pushing work across cores.
 
 | CPU(s)                                      | Max throughput | -t |
 |---------------------------------------------|---------------:|---:|
-| 2× Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz |     103.3 MH/s | 32 |
-| Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz     |      39.2 MH/s |  8 |
-| Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz     |      33.4 MH/s |  8 |
-| AMD A4-1200 APU with Radeon(TM) HD Graphics |       2.6 MH/s |  2 |
-| ARMv6-compatible processor rev 7 (v6l)      |      0.22 MH/s |  1 |
+| 2× Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz |     108.1 MH/s | 32 |
+| Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz     |      44.3 MH/s |  8 |
+| Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz     |      40.0 MH/s |  8 |
+| AMD A4-1200 APU with Radeon(TM) HD Graphics |       2.8 MH/s |  2 |
+| ARMv6-compatible processor rev 7 (v6l)      |      0.26 MH/s |  1 |
 
 ## Inspiration
 sand leek was greatly inspired by schallot, escahlot and scallion.
