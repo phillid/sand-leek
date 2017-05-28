@@ -35,6 +35,7 @@ similar tools out there when pushing work across cores.
 | Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz     |      44.3 MH/s |  8 |
 | Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz     |      40.0 MH/s |  8 |
 | AMD A4-1200 APU with Radeon(TM) HD Graphics |       2.8 MH/s |  2 |
+| Intel(R) Pentium(R) M processor 1.60GHz     |       1.8 MH/s |  1 |
 | ARMv6-compatible processor rev 7 (v6l)      |      0.26 MH/s |  1 |
 
 ## Inspiration
