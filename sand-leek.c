@@ -23,7 +23,7 @@
 
 #define RSA_KEY_BITS          1024
 
-char bitmasks[] = {
+static char bitmasks[] = {
 	[1] = 0xF8, /* 5 MSB */
 	[2] = 0xC0, /* 2 MSB */
 	[3] = 0xFE, /* 7 MSB */
