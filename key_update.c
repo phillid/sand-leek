@@ -42,8 +42,8 @@ key_update_d(RSA *rsa_key) {
 
 	BN_mod_inverse(true_d, e, lambda_n, bn_ctx);
 	BN_mod_inverse(true_iqmp, q, p, bn_ctx);
-	BN_mod(rsa_key->dmp, true_d, p1, bn_ctx);
-	BN_mod(rsa_key->dmq, true_d, q1, bn_ctx);
+	BN_mod(true_dmp1, true_d, p1, bn_ctx);
+	BN_mod(true_dmq1, true_d, q1, bn_ctx);
 
 	/* cleanup BN structs not managed by RSA internal functions */
 	BN_clear_free(gcd);
