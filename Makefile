@@ -1,4 +1,4 @@
-CFLAGS += -Wall -Wextra -O2 -mssse3
+CFLAGS += -Wall -Wextra -O2
 LDFLAGS += -lssl -lcrypto -lpthread
 
 all: sand-leek

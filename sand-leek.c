@@ -23,7 +23,20 @@
 
 #define RSA_KEY_BITS          1024
 
+char bitmasks[] = {
+	[1] = 0xF8, /* 5 MSB */
+	[2] = 0xC0, /* 2 MSB */
+	[3] = 0xFE, /* 7 MSB */
+	[4] = 0xF0, /* 4 MSB */
+	[5] = 0x80, /* 1 MSB */
+	[6] = 0xFC, /* 6 MSB */
+	[7] = 0xE0  /* 3 MSB */
+};
+
+
 static char *search;
+static char search_pad[16];
+static unsigned char search_raw[10];
 static size_t search_len;
 sem_t working;
 
@@ -92,9 +105,7 @@ key_update_d(RSA *rsa_key) {
 void*
 work(void *arg) {
 	char onion[17];
-#ifdef __SSSE3__
-	char check_onion[17]; /* buffer for onion address used in sanity check */
-#endif
+	char bitmask;
 	unsigned char sha[20];
 	unsigned long e = EXPONENT_MIN;
 	unsigned int e_big_endian = 0;
@@ -157,14 +168,6 @@ work(void *arg) {
 			SHA1_Update(&working_sha_c, &e_big_endian, EXPONENT_SIZE_BYTES);
 			SHA1_Final((unsigned char*)&sha, &working_sha_c);
 
-#ifdef __SSSE3__
-			onion_base32_ssse3(onion, sha);
-#else
-			onion_base32(onion, sha);
-#endif
-
-			onion[16] = '\0';
-
 			if (hashes++ >= 1000) {
 				hashes = 0;
 				(*kilo_hashes)++;
@@ -173,21 +176,54 @@ work(void *arg) {
 				if (sem_val > 0)
 					goto STOP;
 			}
-			if(strncmp(onion, search, search_len) == 0) {
-#ifdef __SSSE3__
-				/* sanity check: my SSE algorithm is still experimental, so
-				  * check it with old trusty */
-				onion_base32(check_onion, sha);
-				check_onion[16] = '\0';
-				if (strcmp(check_onion, onion)) {
+
+			int raw_len = 0;
+			switch (search_len) {
+			case  1: raw_len = 0; break;
+			case  2: raw_len = 1; break;
+			case  3: raw_len = 1; break;
+			case  4: raw_len = 2; break;
+			case  5: raw_len = 3; break;
+			case  6: raw_len = 3; break;
+			case  7: raw_len = 4; break;
+			case  8: raw_len = 5; break;
+			case  9: raw_len = 5; break;
+			case 10: raw_len = 6; break;
+			case 11: raw_len = 6; break;
+			case 12: raw_len = 7; break;
+			case 13: raw_len = 8; break;
+			case 14: raw_len = 8; break;
+			case 15: raw_len = 9; break;
+			case 16: raw_len = 10; break;
+			}
+			if (memcmp(sha, search_raw, raw_len) == 0) {
+				/* check the remaining partial byte */
+				switch (search_len) {
+				case 8:
+				case 16:
+					/* nothing to do; already a raw byte boundary */
+					break;
+				default:
+					bitmask = bitmasks[search_len % 8];
+					if ((search_raw[raw_len] & bitmask) != (sha[raw_len] & bitmask)) {
+						e += 2;
+						continue;
+					}
+					break;
+				}
+
+				/* sanity check */
+				onion_base32(onion, sha);
+				onion[16] = '\0';
+				if (strncmp(onion, search, search_len)) {
 					fprintf(stderr,
 						"BUG: Discrepancy between SSE algorithm and old trusty\n"
-						"SSE gave me %s, but trusty says it should be %s\n"
+						"Looking for %s, but the sum is %s\n"
 						"Please report this to the developer\n",
-						onion, check_onion);
+						search, onion);
+						while(1);
 						continue;
 				}
-#endif
 				fprintf(stderr, "Found %s.onion\n", onion);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
@@ -271,12 +307,7 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 
 void
 show_version(void) {
-#ifdef __SSSE3__
-# define EXTENSIONS "SSSE3 Base32 Algorithm"
-#else
-# define EXTENSIONS "None"
-#endif
-	printf("sand-leek "VERSION" built with extensions: "EXTENSIONS"\n");
+	printf("sand-leek "VERSION"\n");
 }
 
 int
@@ -320,6 +351,12 @@ main(int argc, char **argv) {
 		);
 		return 1;
 	}
+
+	memset(search_pad, 0, sizeof(search_pad));
+	strncpy(search_pad, search, sizeof(search_pad));
+
+	/* decode desired base32 */
+	onion_base32_dec(search_raw, search_pad);
 
 	workers = calloc(thread_count, sizeof(workers[0]));
 	if (!workers) {
