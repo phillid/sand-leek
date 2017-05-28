@@ -246,7 +246,7 @@ main(int argc, char **argv) {
 	int i = 0;
 	ssize_t offset = 0;
 	pthread_t *workers = NULL;
-	unsigned long volatile *khashes = NULL;
+	volatile unsigned long *khashes = NULL;
 
 	while ((opt = getopt(argc, argv, "t:s:V")) != -1) {
 		switch (opt) {
@@ -309,6 +309,8 @@ main(int argc, char **argv) {
 	for (i = 0; i < thread_count; i++) {
 		if (pthread_create(&workers[i], NULL, work, (void*)&khashes[i])) {
 			perror("pthread_create");
+			free((unsigned long*)khashes);
+			free(workers);
 			return 1;
 		}
 	}
@@ -319,6 +321,8 @@ main(int argc, char **argv) {
 		pthread_join(workers[i], NULL);
 	}
 
+	free((unsigned long*)khashes);
+	free(workers);
 	return 0;
 }
 
