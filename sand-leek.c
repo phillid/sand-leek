@@ -23,27 +23,17 @@
 
 #define RSA_KEY_BITS          1024
 
-static char bitmasks[] = {
-	[1] = 0xF8, /* 5 MSB */
-	[2] = 0xC0, /* 2 MSB */
-	[3] = 0xFE, /* 7 MSB */
-	[4] = 0xF0, /* 4 MSB */
-	[5] = 0x80, /* 1 MSB */
-	[6] = 0xFC, /* 6 MSB */
-	[7] = 0xE0  /* 3 MSB */
-};
-
-
 static char *search;
 static char search_pad[16];
 static unsigned char search_raw[10];
 static size_t search_len;
+static int raw_len;
+static char bitmask;
 sem_t working;
 
 void*
 work(void *arg) {
 	char onion[17];
-	char bitmask;
 	unsigned char sha[20];
 	unsigned long e = EXPONENT_MIN;
 	unsigned int e_big_endian = 0;
@@ -115,25 +105,6 @@ work(void *arg) {
 					goto STOP;
 			}
 
-			int raw_len = 0;
-			switch (search_len) {
-			case  1: raw_len = 0; break;
-			case  2:
-			case  3: raw_len = 1; break;
-			case  4: raw_len = 2; break;
-			case  5:
-			case  6: raw_len = 3; break;
-			case  7: raw_len = 4; break;
-			case  8:
-			case  9: raw_len = 5; break;
-			case 10: raw_len = 6; break;
-			case 11: raw_len = 6; break;
-			case 12: raw_len = 7; break;
-			case 13:
-			case 14: raw_len = 8; break;
-			case 15: raw_len = 9; break;
-			case 16: raw_len = 10; break;
-			}
 			if (memcmp(sha, search_raw, raw_len) == 0) {
 				/* check the remaining partial byte */
 				switch (search_len) {
@@ -142,7 +113,6 @@ work(void *arg) {
 					/* nothing to do; already a raw byte boundary */
 					break;
 				default:
-					bitmask = bitmasks[search_len % 8];
 					if ((search_raw[raw_len] & bitmask) != (sha[raw_len] & bitmask)) {
 						e += 2;
 						continue;
@@ -203,6 +173,27 @@ work(void *arg) {
 STOP:
 	sem_post(&working);
 	return NULL;
+}
+
+int
+set_raw_params(void) {
+	/* bitmasks to be used to compare remainder bits */
+	static char bitmasks[] = {
+		[1] = 0xF8, /* 5 MSB */
+		[2] = 0xC0, /* 2 MSB */
+		[3] = 0xFE, /* 7 MSB */
+		[4] = 0xF0, /* 4 MSB */
+		[5] = 0x80, /* 1 MSB */
+		[6] = 0xFC, /* 6 MSB */
+		[7] = 0xE0  /* 3 MSB */
+	};
+
+	/* number of whole bytes of raw hash to compare:
+	 * 10 is the size of the data a full onion address covers
+	 * 16 is the size of the base32-encoded onion address */
+	raw_len = (search_len*10)/16;
+	bitmask = bitmasks[search_len % 8];
+	return 0;
 }
 
 void
@@ -290,6 +281,10 @@ main(int argc, char **argv) {
 		return 1;
 	}
 
+	if (set_raw_params()) {
+		fprintf(stderr, "Search string of poor length\n");
+		return 1;
+	}
 	memset(search_pad, 0, sizeof(search_pad));
 	strncpy(search_pad, search, sizeof(search_pad));
 
