@@ -129,7 +129,6 @@ work(void *arg) {
 						"Looking for %s, but the sum is %s\n"
 						"Please report this to the developer\n",
 						search, onion);
-						while(1);
 						continue;
 				}
 				fprintf(stderr, "Found %s.onion\n", onion);
