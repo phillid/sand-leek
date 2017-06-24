@@ -22,9 +22,6 @@ may take a very long time to crack a long search.
 ## Future work
 I have every intention to add GPU capability to sand leek.
 
-Additionally, as outlined above, sand leek really needs to be verifying
-that keys are sane.
-
 ## Benchmarks
 Preliminary benching shows sand leek to be faster than some of the other
 similar tools out there when pushing work across cores.
