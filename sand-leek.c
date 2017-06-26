@@ -177,7 +177,7 @@ STOP:
 int
 set_raw_params(void) {
 	/* bitmasks to be used to compare remainder bits */
-	static char bitmasks[] = {
+	static unsigned char bitmasks[] = {
 		[1] = 0xF8, /* 5 MSB */
 		[2] = 0xC0, /* 2 MSB */
 		[3] = 0xFE, /* 7 MSB */
