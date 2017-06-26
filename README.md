@@ -1,6 +1,8 @@
 # sand leek
 experimental vanity onion address whatchamacallit
 
+[![Build Status](https://travis-ci.org/phillid/sand-leek.svg?branch=master)](https://travis-ci.org/phillid/sand-leek)
+
 ## Usage
 
 Typical usage is something like
