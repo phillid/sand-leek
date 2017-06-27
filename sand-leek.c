@@ -207,15 +207,16 @@ die_usage(const char *argv0) {
 
 void
 monitor_progress(unsigned long volatile *khashes, int thread_count) {
+	int res = 0;
 	int loops = 0;
 	int i = 0;
 	unsigned long total_khashes = 0;
 	unsigned long last_total_khashes = 0;
 
 	loops = 0;
-	while (sem_trywait(&working) && errno == EAGAIN) {
-		sleep(1);
-		loops++;
+	/* loop while no thread as announced work end; we don't want to
+	 * trample its output on stderr */
+	while (!sem_getvalue(&working, &res) && res == 0) {
 		last_total_khashes = total_khashes;
 		total_khashes = 0;
 		/* approximate hashes per second */
@@ -227,6 +228,8 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 			(double)(total_khashes - last_total_khashes) / thread_count,
 			(double)total_khashes / loops,
 			((double)total_khashes / loops) / thread_count);
+		sleep(1);
+		loops++;
 	}
 
 	/* line feed to finish off carriage return from hashrate fprintf */
