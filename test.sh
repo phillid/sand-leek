@@ -23,7 +23,7 @@ real="$( \
 
 echo "Key analysis shows it's for ${real}"
 
-if [ "$found" == "$real" ] ; then
+if [ "$found" = "$real" ] ; then
 	echo "It's a match, I'm happy"
 	rm $key
 	rm $stderr
