@@ -125,7 +125,7 @@ work(void *arg) {
 				onion[16] = '\0';
 				if (strncmp(onion, search, search_len)) {
 					fprintf(stderr,
-						"BUG: Discrepancy between SSE algorithm and old trusty\n"
+						"BUG: Discrepancy between raw and base32 onion addresses\n"
 						"Looking for %s, but the sum is %s\n"
 						"Please report this to the developer\n",
 						search, onion);
