@@ -3,6 +3,11 @@
 
 static const char base32_lookup[] = "abcdefghijklmnopqrstuvwxyz234567";
 
+/* Find the first instance of a character in `subject` which is not in the
+ * base32 alphabet.
+ * Returns the offset into `subject` of the first such character, or -1
+ * if no such character exists in the string
+ */
 int
 check_base32(char *subject) {
 	size_t offset = 0;
@@ -35,6 +40,9 @@ onion_base32(char output[16], unsigned char sum[20]) {
 	}
 }
 
+/* Helper function for onion_base32_dec. Decodes a single base32 character
+ * into its binary equivalent
+ */
 unsigned char
 base32_dec_single(char b) {
 	if (b >= 'a' && b <= 'z')
