@@ -9,8 +9,8 @@ sand-leek: sand-leek.o onion_base32.o key_update.o
 clean:
 	rm -vf sand-leek *.o
 
-test:
-	./test.sh
+test: all
+	@./test/run-tests.sh
 
 .PHONY: all clean test
 

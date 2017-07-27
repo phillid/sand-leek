@@ -1,0 +1,2 @@
+usage: ../../sand-leek [-t threads] -s search
+searches for keys for onion addresses beginning with `search`
