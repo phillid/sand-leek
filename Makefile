@@ -7,7 +7,7 @@ sand-leek: sand-leek.o onion_base32.o key_update.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
-	rm -vf sand-leek *.o
+	rm -f sand-leek *.o
 
 test: all
 	@./test/run-tests.sh
