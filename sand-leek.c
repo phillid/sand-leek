@@ -170,6 +170,7 @@ work(void *arg) {
 		}
 	}
 STOP:
+	BN_free(bignum_e);
 	sem_post(&working);
 	return NULL;
 }
