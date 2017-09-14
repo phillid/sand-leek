@@ -227,8 +227,8 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		fprintf(stderr, "Last second: %lu kH/s (%.2f kH/s/thread) | Average: %.2f kH/s (%.2f kH/s/thread)\r",
 			total_khashes - last_total_khashes,
 			(double)(total_khashes - last_total_khashes) / thread_count,
-			(double)total_khashes / (loops || 1),
-			((double)total_khashes / (loops || 1)) / thread_count);
+			(double)total_khashes / (loops ? loops : 1),
+			((double)total_khashes / (loops ? loops : 1)) / thread_count);
 		sleep(1);
 		loops++;
 	}
