@@ -89,8 +89,7 @@ work(void *arg) {
 		free(der_data);
 
 		while (e < EXPONENT_MAX) {
-			memcpy(&working_sha_c, &sha_c, 10*sizeof(SHA_LONG)); /* FIXME magic */
-			working_sha_c.num = sha_c.num;
+			memcpy(&working_sha_c, &sha_c, sizeof(SHA_CTX));
 
 			e_big_endian = htobe32(e);
 			SHA1_Update(&working_sha_c, &e_big_endian, EXPONENT_SIZE_BYTES);
