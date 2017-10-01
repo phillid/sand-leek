@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#define SHA_CHUNK_LEN 64
+
 struct sha_data {
 	uint32_t a;
 	uint32_t b;
@@ -10,7 +12,7 @@ struct sha_data {
 	uint32_t e;
 	uint64_t len;
 	size_t data_len;
-	uint8_t data[64];
+	uint8_t data[SHA_CHUNK_LEN];
 };
 void sha_init(struct sha_data*);
 void sha_update(struct sha_data*, void *, size_t);
