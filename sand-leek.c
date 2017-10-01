@@ -8,12 +8,16 @@
 #include <string.h>
 #include <endian.h>
 #include <openssl/rsa.h>
-#include <openssl/sha.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
 #include "onion_base32.h"
 #include "key_update.h"
+
+/* Use my own silly implementation of the SHA1 algorithm.
+ * Really only used this to test its correctness, performance decrease
+ * is 60-90% because it doesn't explicitly use SIMD operations */
+#include "sha1.h"
 
 #define VERSION "0.5"
 
@@ -44,8 +48,8 @@ work(void *arg) {
 	unsigned long hashes = 0;
 	BIGNUM *bignum_e = NULL;
 	RSA *rsa_key = NULL;
-	SHA_CTX sha_c;
-	SHA_CTX working_sha_c;
+	struct sha_data sha_c;
+	struct sha_data working_sha_c;
 	int sem_val = 0;
 
 	rsa_key = RSA_new();
@@ -84,16 +88,16 @@ work(void *arg) {
 		}
 
 		/* core loop adapted from eschalot */
-		SHA1_Init(&sha_c);
-		SHA1_Update(&sha_c, der_data, der_length - EXPONENT_SIZE_BYTES);
+		sha_init(&sha_c);
+		sha_update(&sha_c, der_data, der_length - EXPONENT_SIZE_BYTES);
 		free(der_data);
 
 		while (e < EXPONENT_MAX) {
-			memcpy(&working_sha_c, &sha_c, sizeof(SHA_CTX));
+			memcpy(&working_sha_c, &sha_c, sizeof(struct sha_data));
 
 			e_big_endian = htobe32(e);
-			SHA1_Update(&working_sha_c, &e_big_endian, EXPONENT_SIZE_BYTES);
-			SHA1_Final((unsigned char*)&sha, &working_sha_c);
+			sha_update(&working_sha_c, &e_big_endian, EXPONENT_SIZE_BYTES);
+			sha_final((unsigned char*)&sha, &working_sha_c);
 
 			if (hashes++ >= 1000) {
 				hashes = 0;
