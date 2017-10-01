@@ -1,7 +1,7 @@
 CFLAGS += -Wall -Wextra -O2
 LDFLAGS += -lssl -lcrypto -lpthread
 
-all: sand-leek sand-leek-cl
+all: sand-leek
 
 sand-leek: sand-leek.o onion_base32.o key_update.o
 	$(CC) -o $@ $^ $(LDFLAGS)
