@@ -13,7 +13,7 @@ uint32_t h4 = 0xC3D2E1F0;
 #define ROL(x, shamt) ((x << shamt) | (x >> (sizeof(x)*8 - shamt)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-void sha_chunk(uint8_t (*buf)[64], struct sha_data *sha) {
+void sha_chunk(uint8_t (*buf)[SHA_CHUNK_LEN], struct sha_data *sha) {
 	uint32_t w[80] = {0};
 	uint32_t new_a = 0;
 	uint32_t a = sha->a;
@@ -101,15 +101,15 @@ void sha_update(struct sha_data *c, void *data, size_t size) {
 	uint8_t *bdata = (uint8_t*)data;
 
 
-	size_t count = MIN(size, 64 - c->data_len);
+	size_t count = MIN(size, SHA_CHUNK_LEN - c->data_len);
 	memcpy(&(c->data[c->data_len]), data, count);
 	c->data_len += count;
 	remaining -= count;
 
 
-	while (c->data_len == 64) {
+	while (c->data_len == SHA_CHUNK_LEN) {
 		sha_chunk(&(c->data), c);
-		count = MIN(remaining, 64);
+		count = MIN(remaining, SHA_CHUNK_LEN);
 		memcpy(c->data, &bdata[size-remaining], count);
 		remaining -= count;
 		c->data_len = count;
@@ -128,11 +128,11 @@ void sha_final(unsigned char *digest, struct sha_data *c) {
 	/* Transform byte len to bit len */
 	c->len *= 8;
 
-	for (i = c->data_len; i < 64; i++)
+	for (i = c->data_len; i < SHA_CHUNK_LEN; i++)
 		c->data[i] = 0;
 
 	/* still room for the 64-bit message length at the end of this chunk? */
-	if (c->data_len + 8 > 64) {
+	if (c->data_len + 8 > SHA_CHUNK_LEN) {
 		sha_chunk(&(c->data), c);
 		memset(c->data, 0, sizeof(c->data));
 	}
