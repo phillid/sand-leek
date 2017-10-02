@@ -326,7 +326,7 @@ int tramp_set_kernel_args(unsigned int raw_len)
 {
 	cl_int ret = 0;
 
-	device_result = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 1024, NULL, &ret);
+	device_result = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 65536, NULL, &ret);
 	if (ret != CL_SUCCESS) {
 		fprintf(stderr, "Failed to create buffer for slave device: %s ", get_cl_error_string(ret));
 		return 1;
