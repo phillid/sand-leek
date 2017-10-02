@@ -1,5 +1,5 @@
-CFLAGS += -Wall -Wextra -O2 -I/usr/include/CL
-LDFLAGS += -lssl -lcrypto -lpthread -lOpenCL
+CFLAGS += -Wall -Wextra -O2 -I/usr/include/CL -g
+LDFLAGS += -lssl -lcrypto -lpthread -lOpenCL -g
 
 all: sand-leek sand-leek-cl
 

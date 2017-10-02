@@ -4,6 +4,7 @@
 
 #include "cl_error.h"
 #include "slurp.h"
+#include "sha1.h"
 
 static cl_platform_id platform;
 static cl_context context;
@@ -11,13 +12,12 @@ static cl_device_id* devices;
 static cl_uint device_count;
 static unsigned int device_in_use;
 static cl_command_queue command_queue;
-static cl_mem device_buffer;
+static cl_mem device_result;
+static cl_mem device_sha;
+static cl_mem device_search;
 
 static cl_kernel kernel;
 static cl_program program;
-
-static unsigned int size;
-static unsigned int iterations;
 
 /**
  * Wrapper to help with fetching string-based information about an OpenCL
@@ -35,7 +35,7 @@ char *get_platform_info(cl_platform_id id, cl_platform_info value_name)
 
 	ret = clGetPlatformInfo(id, value_name, 0, NULL, &value_len);
 	if (ret != CL_SUCCESS) {
-		fprintf(stderr, "Failed to get platform info for platform %d: %s\n", id, get_cl_error_string(ret));
+		fprintf(stderr, "Failed to get platform info for platform: %s\n", get_cl_error_string(ret));
 		return NULL;
 	}
 
@@ -47,7 +47,7 @@ char *get_platform_info(cl_platform_id id, cl_platform_info value_name)
 
 	ret = clGetPlatformInfo(id, value_name, value_len, value, &value_len);
 	if (ret != CL_SUCCESS) {
-		fprintf(stderr, "Failed to get platform info for platform %d: %s\n", id, get_cl_error_string(ret));
+		fprintf(stderr, "Failed to get platform info for platform: %s\n", get_cl_error_string(ret));
 		return NULL;
 	}
 
@@ -176,7 +176,7 @@ int tramp_init(const char *preferred_platform)
 
 	/* FIXME expose to user */
 	device_in_use = 0;
-	command_queue = clCreateCommandQueue(context, devices[device_in_use], 0, &ret);
+	command_queue = clCreateCommandQueueWithProperties(context, devices[device_in_use], NULL, &ret);
 	if (ret != CL_SUCCESS) {
 		fprintf(stderr, "Failed to create command queue on context: %s ", get_cl_error_string(ret));
 		return 1;
@@ -322,34 +322,49 @@ int tramp_compile_kernel()
  *
  * FIXME investigate using something more flexible?
  */
-int tramp_set_kernel_args(unsigned int s, unsigned int it)
+int tramp_set_kernel_args(unsigned int raw_len)
 {
 	cl_int ret = 0;
 
-	size = s;
-	iterations = it;
-
-	device_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, size*size, NULL, &ret);
+	device_result = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 1024, NULL, &ret);
 	if (ret != CL_SUCCESS) {
 		fprintf(stderr, "Failed to create buffer for slave device: %s ", get_cl_error_string(ret));
 		return 1;
 	}
 
-	ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &device_buffer);
+	device_sha = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(struct sha_data), NULL, &ret);
 	if (ret != CL_SUCCESS) {
-		fprintf(stderr, "Error on buffer argument: %s ", get_cl_error_string(ret));
+		fprintf(stderr, "Failed to create SHA buffer for slave device: %s ", get_cl_error_string(ret));
 		return 1;
 	}
 
-	ret = clSetKernelArg(kernel, 1, sizeof(unsigned int), &size);
+	device_search = clCreateBuffer(context, CL_MEM_READ_WRITE, 10, NULL, &ret);
 	if (ret != CL_SUCCESS) {
-		fprintf(stderr, "Error on size argument: %s ", get_cl_error_string(ret));
+		fprintf(stderr, "Failed to create search buffer for slave device: %s ", get_cl_error_string(ret));
 		return 1;
 	}
 
-	ret = clSetKernelArg(kernel, 2, sizeof(unsigned long), &iterations);
+	ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &device_result);
 	if (ret != CL_SUCCESS) {
-		fprintf(stderr, "Error on iteration argument: %s ", get_cl_error_string(ret));
+		fprintf(stderr, "Error on result buffer argument: %s ", get_cl_error_string(ret));
+		return 1;
+	}
+
+	ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), &device_sha);
+	if (ret != CL_SUCCESS) {
+		fprintf(stderr, "Error on SHA buffer argument: %s ", get_cl_error_string(ret));
+		return 1;
+	}
+
+	ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), &device_search);
+	if (ret != CL_SUCCESS) {
+		fprintf(stderr, "Error on raw search argument: %s ", get_cl_error_string(ret));
+		return 1;
+	}
+
+	ret = clSetKernelArg(kernel, 3, sizeof(cl_int), &raw_len);
+	if (ret != CL_SUCCESS) {
+		fprintf(stderr, "Error on raw length argument: %s ", get_cl_error_string(ret));
 		return 1;
 	}
 
@@ -368,8 +383,8 @@ int tramp_run_kernel()
 	cl_event event;
 	cl_int ret = 0;
 	size_t workgroup_sizes[2];
-	workgroup_sizes[0] = size;
-	workgroup_sizes[1] = size;
+	workgroup_sizes[0] = 65536;
+	workgroup_sizes[1] = 1;
 
 	ret = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, workgroup_sizes, NULL, 0, NULL, &event);
 	if (ret != CL_SUCCESS) {
@@ -395,9 +410,49 @@ int tramp_copy_data(void **buffer, size_t size)
 	cl_event event;
 	cl_int ret = 0;
 
-	ret = clEnqueueReadBuffer(command_queue, device_buffer, CL_TRUE, 0, size, *buffer, 0, NULL, &event);
+	ret = clEnqueueReadBuffer(command_queue, device_result, CL_TRUE, 0, size, *buffer, 0, NULL, &event);
 	if (ret != CL_SUCCESS) {
 		fprintf(stderr, "Failed to enqueue read command for data: %s ", get_cl_error_string(ret));
+		return 1;
+	}
+	clReleaseEvent(event);
+
+	return 0;
+}
+
+/**
+ * Copy an SHA context to the device
+ *
+ * Returns 0 on success, non-zero otherwise.
+ */
+int tramp_copy_sha(struct sha_data *sha)
+{
+	cl_event event;
+	cl_int ret = 0;
+
+	ret = clEnqueueWriteBuffer(command_queue, device_sha, CL_TRUE, 0, sizeof(struct sha_data), sha, 0, NULL, &event);
+	if (ret != CL_SUCCESS) {
+		fprintf(stderr, "Failed to enqueue write command for SHA partial work: %s ", get_cl_error_string(ret));
+		return 1;
+	}
+	clReleaseEvent(event);
+
+	return 0;
+}
+
+/**
+ * Copy a raw search target to the device buffer
+ *
+ * Returns 0 on success, non-zero otherwise.
+ */
+int tramp_copy_search(unsigned int search_raw[10])
+{
+	cl_event event;
+	cl_int ret = 0;
+
+	ret = clEnqueueWriteBuffer(command_queue, device_search, CL_TRUE, 0, 10, search_raw, 0, NULL, &event);
+	if (ret != CL_SUCCESS) {
+		fprintf(stderr, "Failed to enqueue write command for SHA partial work: %s ", get_cl_error_string(ret));
 		return 1;
 	}
 	clReleaseEvent(event);
