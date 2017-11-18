@@ -21,6 +21,12 @@ or a large number of other valid addresses. Beware of using too long a
 search. While you may luck out and get a key quickly, on average, it
 may take a very long time to crack a long search.
 
+## Platforms Supported
+
+Travis CI performs automated builds and tests on OSX and Linux platforms,
+with both gcc and clang. Builds are carried out manually for Windows with
+MinGW on Linux.
+
 ## Future work
 I have every intention to add GPU capability to sand leek.
 
