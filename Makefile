@@ -3,6 +3,8 @@ LDFLAGS += -lssl -lcrypto -lpthread
 
 all: sand-leek
 
+sand-leek.o: endian.h onion_base32.h key_update.h
+
 sand-leek: sand-leek.o onion_base32.o key_update.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 

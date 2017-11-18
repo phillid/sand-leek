@@ -6,12 +6,12 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <string.h>
-#include <endian.h>
 #include <openssl/rsa.h>
 #include <openssl/sha.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
+#include "endian.h"
 #include "onion_base32.h"
 #include "key_update.h"
 
@@ -91,7 +91,7 @@ work(void *arg) {
 		while (e < EXPONENT_MAX) {
 			memcpy(&working_sha_c, &sha_c, sizeof(SHA_CTX));
 
-			e_big_endian = htobe32(e);
+			e_big_endian = sl_htobe32(e);
 			SHA1_Update(&working_sha_c, &e_big_endian, EXPONENT_SIZE_BYTES);
 			SHA1_Final((unsigned char*)&sha, &working_sha_c);
 
