@@ -24,8 +24,15 @@ may take a very long time to crack a long search.
 ## Platforms Supported
 
 Travis CI performs automated builds and tests on OSX and Linux platforms,
-with both gcc and clang. Builds are carried out manually for Windows with
-MinGW on Linux.
+with both gcc and clang.
+
+Builds and tests have been successfully carried out for:
+
+* Windows with MinGW on Linux
+* SunOS 5.1
+
+but these are not automated, nor are they part of the primarily supported
+platforms.
 
 ## Future work
 I have every intention to add GPU capability to sand leek.
@@ -40,7 +47,7 @@ similar tools out there when pushing work across cores.
 | Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz     |     3.4 |      44.3 MH/s |  8 | x64 Linux  |
 | Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz     |     3.4 |      40.0 MH/s |  8 | x64 Linux  |
 | AMD A6-3430MX with Radeon(TM) HD Graphics   |     1.7 |      12.8 MH/s |  4 | Win64      |
-| UltraSPARC-T2                               |     1.2 |       7.4 MH/s | 64 | SunOS 5.1  |
+| Sun Microsystems UltraSPARC-T2              |     1.2 |       7.4 MH/s | 64 | SunOS 5.1  |
 | ARMv7 Processor rev 4 (v7l)                 |     1.2 |       5.3 MH/s |  4 | RPi 3      |
 | AMD A4-1200 APU with Radeon(TM) HD Graphics |     1.0 |       2.8 MH/s |  2 | x64 Linux  |
 | Intel(R) Pentium(R) M processor 1.60GHz     |     1.6 |       1.9 MH/s |  1 | x64 Linux  |
