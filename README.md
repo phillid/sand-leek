@@ -28,15 +28,16 @@ I have every intention to add GPU capability to sand leek.
 Preliminary benching shows sand leek to be faster than some of the other
 similar tools out there when pushing work across cores.
 
-| CPU(s)                                      | Max throughput | -t | Notes  |
-|---------------------------------------------|---------------:|---:|--------|
-| 2× Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz |     108.1 MH/s | 32 |        |
-| Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz     |      44.3 MH/s |  8 |        |
-| Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz     |      40.0 MH/s |  8 |        |
-| ARMv7 Processor rev 4 (v7l)                 |       5.3 MH/s |  4 | RPi 3  |
-| AMD A4-1200 APU with Radeon(TM) HD Graphics |       2.8 MH/s |  2 |        |
-| Intel(R) Pentium(R) M processor 1.60GHz     |       1.9 MH/s |  1 |        |
-| ARMv6-compatible processor rev 7 (v6l)      |      0.26 MH/s |  1 | RPi B+ |
+| CPU(s)                                      | CPU GHz | Max throughput | -t | Notes      |
+|---------------------------------------------|--------:|---------------:|---:|------------|
+| 2× Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz |     2.6 |     108.1 MH/s | 32 | x64 Linux  |
+| Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz     |     3.4 |      44.3 MH/s |  8 | x64 Linux  |
+| Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz     |     3.4 |      40.0 MH/s |  8 | x64 Linux  |
+| AMD A6-3430MX with Radeon(TM) HD Graphics   |     1.7 |      12.8 MH/s |  4 | Win64      |
+| ARMv7 Processor rev 4 (v7l)                 |     1.2 |       5.3 MH/s |  4 | RPi 3      |
+| AMD A4-1200 APU with Radeon(TM) HD Graphics |     1.0 |       2.8 MH/s |  2 | x64 Linux  |
+| Intel(R) Pentium(R) M processor 1.60GHz     |     1.6 |       1.9 MH/s |  1 | x64 Linux  |
+| ARMv6-compatible processor rev 7 (v6l)      |     0.7 |      0.26 MH/s |  1 | RPi B+     |
 
 ## Inspiration
 sand leek was greatly inspired by schallot, escahlot and scallion.
