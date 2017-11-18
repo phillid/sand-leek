@@ -29,7 +29,7 @@ static unsigned char search_raw[10];
 static size_t search_len;
 static int raw_len;
 static char bitmask;
-sem_t working;
+static volatile char working;
 
 void*
 work(void *arg) {
@@ -46,7 +46,6 @@ work(void *arg) {
 	RSA *rsa_key = NULL;
 	SHA_CTX sha_c;
 	SHA_CTX working_sha_c;
-	int sem_val = 0;
 
 	rsa_key = RSA_new();
 	if (!rsa_key) {
@@ -60,7 +59,7 @@ work(void *arg) {
 		goto STOP;
 	}
 
-	while(sem_getvalue(&working, &sem_val) == 0 && sem_val == 0) {
+	while(working) {
 		e = EXPONENT_MIN;
 		BN_set_word(bignum_e, e);
 		if (!RSA_generate_key_ex(rsa_key, RSA_KEY_BITS, bignum_e, NULL)) {
@@ -99,8 +98,7 @@ work(void *arg) {
 				hashes = 0;
 				(*kilo_hashes)++;
 				/* check if we should still be working too */
-				sem_getvalue(&working, &sem_val);
-				if (sem_val > 0)
+				if (!working)
 					goto STOP;
 			}
 
@@ -170,7 +168,7 @@ work(void *arg) {
 	}
 STOP:
 	BN_free(bignum_e);
-	sem_post(&working);
+	working = 0;
 	return NULL;
 }
 
@@ -207,7 +205,6 @@ die_usage(const char *argv0) {
 
 void
 monitor_progress(unsigned long volatile *khashes, int thread_count) {
-	int res = 0;
 	int loops = 0;
 	int i = 0;
 	unsigned long total_khashes = 0;
@@ -216,7 +213,7 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	loops = 0;
 	/* loop while no thread as announced work end; we don't want to
 	 * trample its output on stderr */
-	while (!sem_getvalue(&working, &res) && res == 0) {
+	while (working) {
 		last_total_khashes = total_khashes;
 		total_khashes = 0;
 		/* approximate hashes per second */
@@ -306,7 +303,7 @@ main(int argc, char **argv) {
 		return 1;
 	}
 
-	sem_init(&working, 0, 0);
+	working = 1;
 
 	for (i = 0; i < thread_count; i++) {
 		if (pthread_create(&workers[i], NULL, work, (void*)&khashes[i])) {
