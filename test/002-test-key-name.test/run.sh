@@ -29,6 +29,7 @@ if [ "$found" = "$real" ] ; then
 	rm $stderr
 	exit 0
 else
-	echo "Error: No match"
+	echo "Error: No match. Key file contents:"
+	cat "$key"
 	exit 1
 fi
