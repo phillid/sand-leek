@@ -4,7 +4,6 @@
 fail()
 {
 	echo -e '[\e[1;31mFAIL\e[0m] '"$i:" "$@"
-	exit 1
 }
 
 pass()
@@ -18,6 +17,7 @@ check_expected()
 	if [ -f "$1.expected" ] ; then
 		if ! diff "$1.expected" "$1.tmp" >/dev/null; then
 			fail "$1 didn't match expected"
+			exit 1
 		fi
 	fi
 }
@@ -28,6 +28,11 @@ for i in *.test ; do
 	pushd "${i}" >/dev/null
 	if ! ( . ./run.sh ) 2>stderr.tmp >stdout.tmp; then
 		fail "script had non-zero return code"
+		echo "stderr:"
+		cat stderr.tmp
+		echo "stdout:"
+		cat stdout.tmp
+		exit 1
 	fi
 
 	check_expected stdout
