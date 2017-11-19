@@ -10,10 +10,22 @@ struct sha_data {
 	unsigned int e;
 	unsigned long len;
 	unsigned long data_len;
-	char data[SHA_CHUNK_LEN];
+	unsigned char data[SHA_CHUNK_LEN];
 };
 
-void sha_chunk(char (*buf)[SHA_CHUNK_LEN], struct sha_data *sha) {
+void memcpy(void *restrict dest, void *restrict src, int len) {
+	unsigned char *dest_ = (unsigned char*)dest;
+	unsigned char *src_ = (unsigned char*)src;
+	int i = 0;
+	for (i = 0; i < len; i++) {
+		dest_[i] = src_[i];
+	}
+//	while (len-- >= 0) {
+//		dest_[len] = src_[len];
+//	}
+}
+
+void sha_chunk(unsigned char (*buf)[SHA_CHUNK_LEN], struct sha_data *sha) {
 	unsigned int w[80] = {0};
 	unsigned int new_a = 0;
 	unsigned int a = sha->a;
@@ -24,25 +36,27 @@ void sha_chunk(char (*buf)[SHA_CHUNK_LEN], struct sha_data *sha) {
 	unsigned int i = 0;
 	unsigned int bo = 0;
 
-	unsigned int k[] = {
+	const unsigned int k[] = {
 		0x5A827999,
 		0x6ED9EBA1,
 		0x8F1BBCDC,
 		0xCA62C1D6
 	};
 
+	#pragma unroll
 	for (i = 0; i < 80; i++, bo+=4) {
-		w[i] = ((unsigned int)(*buf)[bo]) << 24;
-		w[i] |= (*buf)[bo+1] << 16;
-		w[i] |= (*buf)[bo+2] << 8;
-		w[i] |= (*buf)[bo+3];
+		w[i] = ((*buf)[bo]) << 24;
+		w[i] |= ((*buf)[bo+1]) << 16;
+		w[i] |= ((*buf)[bo+2]) << 8;
+		w[i] |= ((*buf)[bo+3]);
 	}
 
-	/* FIXME unroll these operations? */
+//	#pragma unroll
 	for (i = 16; i < 80; i++) {
 		w[i] = ROL((w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16]), 1);
 	}
 
+//	#pragma unroll
 	for (i = 0; i < 20; i++) {
 		new_a = ROL(a, 5) + ((b&c)|((~b)&d)) + e + w[i] + k[0];
 		e = d;
@@ -52,6 +66,7 @@ void sha_chunk(char (*buf)[SHA_CHUNK_LEN], struct sha_data *sha) {
 		a = new_a;
 	}
 
+//	#pragma unroll
 	for (i = 20; i < 40; i++) {
 		new_a = ROL(a, 5) + (b^c^d) + e + w[i] + k[1];
 		e = d;
@@ -61,6 +76,7 @@ void sha_chunk(char (*buf)[SHA_CHUNK_LEN], struct sha_data *sha) {
 		a = new_a;
 	}
 
+//	#pragma unroll
 	for (i = 40; i < 60; i++) {
 		new_a = ROL(a, 5) + ((b&c)|(b&d)|(c&d)) + e + w[i] + k[2];
 		e = d;
@@ -69,7 +85,7 @@ void sha_chunk(char (*buf)[SHA_CHUNK_LEN], struct sha_data *sha) {
 		b = a;
 		a = new_a;
 	}
-
+//	#pragma unroll
 	for (i = 60; i < 80; i++) {
 		new_a = ROL(a, 5) + (b^c^d) + e + w[i] + k[3];
 		e = d;
@@ -88,13 +104,13 @@ void sha_chunk(char (*buf)[SHA_CHUNK_LEN], struct sha_data *sha) {
 void sha_update(struct sha_data *c, void *data, unsigned int size) {
 	unsigned int i = 0;
 	size_t remaining = size;
-	char *bdata = (char*)data;
+	unsigned char *bdata = (unsigned char*)data;
 
 
 	size_t count = MIN(size, SHA_CHUNK_LEN - c->data_len);
 	for (i = 0; i < count; i++)
 		c->data[c->data_len+i] = ((char*)data)[i];
-//	memcpy(&(c->data[c->data_len]), data, count);
+	//memcpy(&(c->data[c->data_len]), data, count);
 	c->data_len += count;
 	remaining -= count;
 
@@ -102,7 +118,7 @@ void sha_update(struct sha_data *c, void *data, unsigned int size) {
 	while (c->data_len == SHA_CHUNK_LEN) {
 		sha_chunk(&(c->data), c);
 		count = MIN(remaining, SHA_CHUNK_LEN);
-		//memcpy(c->data, &bdata[size-remaining], count);
+		memcpy(c->data, &bdata[size-remaining], count);
 		remaining -= count;
 		c->data_len = count;
 	}
@@ -142,7 +158,6 @@ void sha_final(unsigned char *digest, struct sha_data *c) {
 
 	sha_chunk(&(c->data), c);
 
-
 	/* FIXME loop or leave unrolled? */
 	digest[ 0] = c->a >> 24;
 	digest[ 1] = c->a >> 16;
@@ -157,6 +172,9 @@ void sha_final(unsigned char *digest, struct sha_data *c) {
 
 	digest[ 8] = c->c >> 24;
 	digest[ 9] = c->c >> 16;
+
+
+// second half of hash not needed eh?
 	digest[10] = c->c >> 8;
 	digest[11] = c->c;
 
@@ -172,36 +190,118 @@ void sha_final(unsigned char *digest, struct sha_data *c) {
 }
 
 __kernel void fractal_gen(
-	__global unsigned char *results,
+	__global unsigned int *results,
 	__constant struct sha_data *partial,
 	__constant unsigned char *search,
-	const unsigned int raw_length)
+	const unsigned int raw_length,
+	const unsigned int bitmask)
 {
 	unsigned int tx = get_global_id(0);
 	unsigned int ty = get_global_id(1);
-	unsigned int i;
+	unsigned int i,j;
 
 	struct sha_data ctx;
-	ctx.a = partial->a;
-	ctx.b = partial->b;
-	ctx.c = partial->c;
-	ctx.d = partial->d;
-	ctx.e = partial->e;
-	ctx.len = partial->len;
-	ctx.data_len = partial->data_len;
-	for (i = 0; i < SHA_CHUNK_LEN; i++) {
-		ctx.data[i] = partial->data[i];
-	}
 
 	/* FIXME dummy e (big-endian) */
-	char e[4] = {0x1F, 0xFF, 0xFF, 0xFF};
-	char digest[20];
-	for (i = 0; i < 65536; i++) {
-		sha_update(&ctx, &e, 4);
+	unsigned char e[4] = {0x1F, 0xFF, 0xFF, 0xFF};
+	unsigned char digest[20];
 
-		sha_final(&digest, &ctx);
+	/* first half of e is our worker number rest is determined later */
+	e[0] = ((tx >> 8) & 0xFF);
+
+	/* if MSB is 0, then it doesn't need to be stored in the key, so violates
+	 * law of sizeof(e) == 4, messing everything up */
+	if (e[0] == 0) {
+		return;
 	}
 
-//	buffer[(size*y)+x] = (i*255)/iterations;
+	e[1] = tx & 0xFF;
+	results[tx] = 0;
+
+	for (i = 3; i < 65536; i+=2) {
+		e[2] = (i >> 8) & 0xFF;
+		e[3] = i & 0xFF;
+
+		#pragma unroll
+		for (j = 0; j < SHA_CHUNK_LEN; j++) {
+			ctx.data[j] = partial->data[j];
+		}
+		ctx.a = partial->a;
+		ctx.b = partial->b;
+		ctx.c = partial->c;
+		ctx.d = partial->d;
+		ctx.e = partial->e;
+		ctx.len = partial->len;
+		ctx.data_len = partial->data_len;
+
+		sha_update(&ctx, &e, 4);
+		sha_final(&digest, &ctx);
+
+		int all_clear = 1;
+		for (j = 0; j < raw_length; j++) {
+			if (search[j] != digest[j]) {
+				all_clear = 0;
+			}
+		}
+		if (all_clear == 1 && (digest[j] & bitmask) == (search[j] & bitmask)) {
+			results[tx] = i;
+		}
+	}
+
 	return;
+}
+
+
+void unused() {
+/*
+#define R2(w, a, b, c, d, e, i) a = ROL(a, 5) + (b^c^d) + e + w[i] + 0x6ED9EBA1; b = ROL(b, 30);
+
+	R2(w, a, b, c, d, e, 20);
+	R2(w, e, a, b, c, d, 21);
+	R2(w, d, e, a, b, c, 22);
+	R2(w, c, d, e, a, b, 23);
+	R2(w, b, c, d, e, a, 24);
+	R2(w, a, b, c, d, e, 25);
+	R2(w, e, a, b, c, d, 26);
+	R2(w, d, e, a, b, c, 27);
+	R2(w, c, d, e, a, b, 28);
+	R2(w, b, c, d, e, a, 29);
+	R2(w, a, b, c, d, e, 30);
+	R2(w, e, a, b, c, d, 31);
+	R2(w, d, e, a, b, c, 32);
+	R2(w, c, d, e, a, b, 33);
+	R2(w, b, c, d, e, a, 34);
+	R2(w, a, b, c, d, e, 35);
+	R2(w, e, a, b, c, d, 36);
+	R2(w, d, e, a, b, c, 37);
+	R2(w, c, d, e, a, b, 38);
+	R2(w, b, c, d, e, a, 39);*/
+
+/*
+#define R3(w, a, b, c, d, e, i) a = ROL(a, 5) + ((b&c)|(b&d)|(c&d)) + e + w[i] + 0x8F1BBCDC; b = ROL(b, 30);
+
+	R3(w, a, b, c, d, e, 40);
+	R3(w, e, a, b, c, d, 41);
+	R3(w, d, e, a, b, c, 42);
+	R3(w, c, d, e, a, b, 43);
+	R3(w, b, c, d, e, a, 44);
+	R3(w, a, b, c, d, e, 45);
+	R3(w, e, a, b, c, d, 46);
+	R3(w, d, e, a, b, c, 47);
+	R3(w, c, d, e, a, b, 48);
+	R3(w, b, c, d, e, a, 49);
+	R3(w, a, b, c, d, e, 50);
+	R3(w, e, a, b, c, d, 51);
+	R3(w, d, e, a, b, c, 52);
+	R3(w, c, d, e, a, b, 53);
+	R3(w, b, c, d, e, a, 54);
+	R3(w, a, b, c, d, e, 55);
+	R3(w, e, a, b, c, d, 56);
+	R3(w, d, e, a, b, c, 57);
+	R3(w, c, d, e, a, b, 58);
+	R3(w, b, c, d, e, a, 59);
+*/
+
+
+
 }

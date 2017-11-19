@@ -193,8 +193,14 @@ void tramp_destroy()
 {
 	clReleaseKernel(kernel);
 	clReleaseProgram(program);
+	clFlush(command_queue);
+	clFinish(command_queue);
 	clReleaseCommandQueue(command_queue);
 	clReleaseContext(context);
+
+	clReleaseMemObject(device_result);
+	clReleaseMemObject(device_sha);
+	clReleaseMemObject(device_search);
 
 	if (devices) {
 		free(devices);
@@ -322,11 +328,11 @@ int tramp_compile_kernel()
  *
  * FIXME investigate using something more flexible?
  */
-int tramp_set_kernel_args(unsigned int raw_len)
+int tramp_set_kernel_args(unsigned int raw_len, unsigned int bitmask)
 {
 	cl_int ret = 0;
 
-	device_result = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 65536, NULL, &ret);
+	device_result = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 65536*4, NULL, &ret);
 	if (ret != CL_SUCCESS) {
 		fprintf(stderr, "Failed to create buffer for slave device: %s ", get_cl_error_string(ret));
 		return 1;
@@ -368,6 +374,12 @@ int tramp_set_kernel_args(unsigned int raw_len)
 		return 1;
 	}
 
+	ret = clSetKernelArg(kernel, 4, sizeof(cl_int), &bitmask);
+	if (ret != CL_SUCCESS) {
+		fprintf(stderr, "Error on bitmask argument: %s ", get_cl_error_string(ret));
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -383,7 +395,7 @@ int tramp_run_kernel()
 	cl_event event;
 	cl_int ret = 0;
 	size_t workgroup_sizes[2];
-	workgroup_sizes[0] = 65536;
+	workgroup_sizes[0] = 63356;
 	workgroup_sizes[1] = 1;
 
 	ret = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, workgroup_sizes, NULL, 0, NULL, &event);
