@@ -1,5 +1,5 @@
 #define SHA_CHUNK_LEN 64
-#define ROL(x, shamt) ((x << shamt) | ((x >> sizeof(x)*8) - shamt))
+#define ROL(x, shamt) ((x << shamt) | (x >> (sizeof(x)*8 - shamt)))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 struct sha_data {
