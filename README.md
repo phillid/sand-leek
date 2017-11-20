@@ -35,7 +35,7 @@ but these are not automated, nor are they part of the primarily supported
 platforms.
 
 ## Future work
-I have every intention to add GPU capability to sand leek.
+I am currently finishing and tidying GPU capability on sand leek, through OpenCL.
 
 ## Benchmarks
 Preliminary benching shows sand leek to be faster than some of the other
