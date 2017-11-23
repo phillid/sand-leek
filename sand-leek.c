@@ -310,7 +310,7 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		}
 
 		/* FIXME factor out */
-		remaining_abs = abs(remaining);
+		remaining_abs = labs(remaining);
 		if (remaining_abs < 60) {
 			remaining_unit = "second";
 		} else if (remaining_abs < 60*60) {
