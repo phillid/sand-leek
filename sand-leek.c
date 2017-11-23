@@ -319,9 +319,12 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		} else if (remaining_abs < 60*60*24) {
 			remaining = (remaining + 1800) / 3600;
 			remaining_unit = "hour";
-		} else {
+		} else if (remaining_abs < 60*60*24*365.25) {
 			remaining = (remaining + 43200) / 86400;
 			remaining_unit = "day";
+		} else {
+			remaining = (remaining + (60*60*24*365.25)/2) / (60*60*24*365.25);
+			remaining_unit = "year";
 		}
 
 		iprintf("[%02d:%02d:%02d:%02d]: %.2f %s hashes%s. Now ~%lu kH/s (%.2f kH/s/thread). Maybe %ld %s%s left        \r",
