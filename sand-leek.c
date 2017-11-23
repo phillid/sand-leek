@@ -6,6 +6,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <string.h>
+#include <math.h>
 #include <openssl/rsa.h>
 #include <openssl/sha.h>
 #include <openssl/pem.h>
@@ -230,6 +231,13 @@ die_usage(const char *argv0) {
 	exit(1);
 }
 
+void nice_time(long sec, int *seconds, int *minutes, int *hours, int *days) {
+	*seconds = sec % 60; sec -= *seconds; sec /= 60;
+	*minutes = sec % 60; sec -= *minutes; sec /= 60;
+	*hours   = sec % 24; sec -= *hours  ; sec /= 24;
+	*days    = sec % 24;
+}
+
 void
 monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	int loops = 0;
@@ -244,8 +252,16 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	int minutes = 0;
 	int hours = 0;
 	int days = 0;
-	int delta = 0;
+	long delta = 0;
+	long est_khashes = 0;
+	long remaining = 0;
+	long remaining_abs = 0;
+	char *remaining_unit = NULL;
 
+	/* estimated khashes required for approximate certainty of finding a key */
+	est_khashes = pow(32, search_len) / 1000;
+
+	/* FIXME linux-only? Need a portable alternative or (shriek) ifdefs */
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	loops = 0;
@@ -285,16 +301,36 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		/* compute timestamp */
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		delta = now.tv_sec - start.tv_sec;
-		seconds = delta % 60; delta -= seconds; delta /= 60;
-		minutes = delta % 60; delta -= minutes; delta /= 60;
-		hours   = delta % 24; delta -= hours  ; delta /= 24;
-		days    = delta % 24;
+		nice_time(delta, &seconds, &minutes, &hours, &days);
 
-		iprintf("[%02d:%02d:%02d:%02d]: %.2f %s hashes%s. Now ~%lu kH/s (%.2f kH/s/thread)   \r",
+		if (total_khashes - last_total_khashes == 0) {
+			remaining = 0;
+		} else {
+			remaining = (est_khashes/(total_khashes-last_total_khashes)) - delta;
+		}
+
+		/* FIXME factor out */
+		remaining_abs = abs(remaining);
+		if (remaining_abs < 60) {
+			remaining_unit = "second";
+		} else if (remaining_abs < 60*60) {
+			remaining = (remaining + 30) / 60;
+			remaining_unit = "minute";
+		} else if (remaining_abs < 60*60*24) {
+			remaining = (remaining + 1800) / 3600;
+			remaining_unit = "hour";
+		} else {
+			remaining = (remaining + 43200) / 86400;
+			remaining_unit = "day";
+		}
+
+		iprintf("[%02d:%02d:%02d:%02d]: %.2f %s hashes%s. Now ~%lu kH/s (%.2f kH/s/thread). Maybe %ld %s%s left        \r",
 			days, hours, minutes, seconds,
 			hashes_nice, hashes_nice_unit, (hashes_nice > 1000 ? " (!!)" : ""),
 			total_khashes - last_total_khashes,
-			(double)(total_khashes - last_total_khashes) / thread_count);
+			(double)(total_khashes - last_total_khashes) / thread_count,
+			remaining, remaining_unit, (remaining == 1 ? "" : "s" )
+			);
 		sleep(1);
 		loops++;
 	}
