@@ -8,7 +8,7 @@ stderr="$(mktemp)"
 # Four character search should be a < 1 second CPU burst for CI runner
 ${EXECUTABLE} -s site > $key 2>$stderr
 
-found="$(tr '\r' '\n' < $stderr | grep Found | cut -d ' ' -f 2)"
+found="$(tr '\r' '\n' < $stderr | grep Found | cut -d ' ' -f 3)"
 
 echo "sand-leek says it found $found..."
 

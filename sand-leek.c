@@ -419,7 +419,7 @@ main(int argc, char **argv) {
 
 	for (i = 0; i < thread_count; i++) {
 		iprintf("Spawning worker thread %d/%d ... ", i + 1, thread_count);
-		if (pthread_create(&workers[i], NULL, work, (void*)&khashes[i])) { /* FIXME not ! */
+		if (pthread_create(&workers[i], NULL, work, (void*)&khashes[i])) {
 			eprintf("");
 			perror("pthread_create");
 			free((unsigned long*)khashes);
