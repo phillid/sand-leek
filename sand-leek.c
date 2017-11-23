@@ -293,6 +293,8 @@ main(int argc, char **argv) {
 		die_usage(argv[0]);
 	}
 
+	iprintf("Starting sand-leek " VERSION "\n");
+
 	search_len = strlen(search);
 
 	if ((offset = check_base32(search)) >= 0) {
@@ -313,6 +315,8 @@ main(int argc, char **argv) {
 
 	/* decode desired base32 */
 	onion_base32_dec(search_raw, search_pad);
+
+	iprintf("Searching for \"%s\"\n", search);
 
 	workers = calloc(thread_count, sizeof(workers[0]));
 	if (!workers) {
