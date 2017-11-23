@@ -42,7 +42,7 @@ static volatile char working;
 /* "Real" eprintf, error printf. Outputs a message to stderr, prefixed and
  * coloured all fancy */
 #define eprintf(format, ...) \
-	iprintf_bare(COLOUR_RED "ERROR: " \
+	iprintf_bare(COLOUR_BOLD_OFF COLOUR_RED "ERROR: " \
 	             COLOUR_BWHITE format, ##__VA_ARGS__);
 
 /* "Bare" iprintf that does not change colour, apply prefix, etc.
@@ -55,7 +55,7 @@ static volatile char working;
 /* "Real" iprintf, information printf. Outputs a message to stderr, prefixed
  * and coloured all fancy */
 #define iprintf(format, ...) \
-	iprintf_bare(COLOUR_CYAN "INFO: " \
+	iprintf_bare(COLOUR_BOLD_OFF COLOUR_CYAN "INFO: " \
 	             COLOUR_BWHITE format, ##__VA_ARGS__);
 void*
 work(void *arg) {
