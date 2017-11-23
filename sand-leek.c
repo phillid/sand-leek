@@ -14,6 +14,7 @@
 #include "endian.h"
 #include "onion_base32.h"
 #include "key_update.h"
+#include "colour.h"
 
 #define VERSION "0.5"
 
@@ -31,6 +32,31 @@ static int raw_len;
 static char bitmask;
 static volatile char working;
 
+/* "Bare" eprintf that does not change colour, apply prefix, etc.
+ * Only directs information to the appropriate stream */
+#define eprintf_bare(format, ...) \
+	fprintf(stderr, \
+	        format, \
+	        ##__VA_ARGS__)
+
+/* "Real" eprintf, error printf. Outputs a message to stderr, prefixed and
+ * coloured all fancy */
+#define eprintf(format, ...) \
+	iprintf_bare(COLOUR_RED "ERROR: " \
+	             COLOUR_BWHITE format, ##__VA_ARGS__);
+
+/* "Bare" iprintf that does not change colour, apply prefix, etc.
+ * Only directs information to the appropriate stream */
+#define iprintf_bare(format, ...) \
+	fprintf(stderr, \
+	        format, \
+	        ##__VA_ARGS__)
+
+/* "Real" iprintf, information printf. Outputs a message to stderr, prefixed
+ * and coloured all fancy */
+#define iprintf(format, ...) \
+	iprintf_bare(COLOUR_CYAN "INFO: " \
+	             COLOUR_BWHITE format, ##__VA_ARGS__);
 void*
 work(void *arg) {
 	char onion[17];
@@ -49,13 +75,13 @@ work(void *arg) {
 
 	rsa_key = RSA_new();
 	if (!rsa_key) {
-		fprintf(stderr, "Failed to allocate RSA key\n");
+		eprintf("Failed to allocate RSA key\n");
 		goto STOP;
 	}
 
 	bignum_e = BN_new();
 	if (!bignum_e) {
-		fprintf(stderr, "Failed to allocate bignum for exponent\n");
+		eprintf("Failed to allocate bignum for exponent\n");
 		goto STOP;
 	}
 
@@ -63,22 +89,22 @@ work(void *arg) {
 		e = EXPONENT_MIN;
 		BN_set_word(bignum_e, e);
 		if (!RSA_generate_key_ex(rsa_key, RSA_KEY_BITS, bignum_e, NULL)) {
-			fprintf(stderr, "Failed to generate RSA key\n");
+			eprintf("Failed to generate RSA key\n");
 			goto STOP;
 		}
 		der_length = i2d_RSAPublicKey(rsa_key, NULL);
 		if (der_length <= 0) {
-			fprintf(stderr, "i2d failed\n");
+			eprintf("i2d failed\n");
 			goto STOP;
 		}
 		der_data = malloc(der_length);
 		if (!der_data) {
-			fprintf(stderr, "DER data malloc failed\n");
+			eprintf("DER data malloc failed\n");
 			goto STOP;
 		}
 		tmp_data = der_data;
 		if (i2d_RSAPublicKey(rsa_key, &tmp_data) != der_length) {
-			fprintf(stderr, "DER formatting failed\n");
+			eprintf("DER formatting failed\n");
 			goto STOP;
 		}
 
@@ -121,18 +147,19 @@ work(void *arg) {
 				onion_base32(onion, sha);
 				onion[16] = '\0';
 				if (strncmp(onion, search, search_len)) {
-					fprintf(stderr,
+					eprintf(
 						"BUG: Discrepancy between raw and base32 onion addresses\n"
 						"Looking for %s, but the sum is %s\n"
 						"Please report this to the developer\n",
 						search, onion);
 						continue;
 				}
-				fprintf(stderr, "Found %s.onion\n", onion);
+				iprintf_bare("\n");
+				iprintf("Found %s.onion\n", onion);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 				if (BN_set_word(bignum_e, e) != 1) {
-					fprintf(stderr, "BN_set_word failed\n");
+					eprintf("BN_set_word failed\n");
 					goto STOP;
 				}
 				RSA_set0_key(rsa_key, NULL, bignum_e, NULL);
@@ -143,22 +170,22 @@ work(void *arg) {
 				BN_set_word(rsa_key->e, e);
 #endif
 				if (key_update_d(rsa_key)) {
-					printf("Error updating d component of RSA key, stop.\n");
+					eprintf("Error updating d component of RSA key, stop.\n");
 					goto STOP;
 				}
 
 				if (RSA_check_key(rsa_key) == 1) {
-					fprintf(stderr, "Key valid\n");
+					iprintf("Key valid\n");
 					EVP_PKEY *evp_key = EVP_PKEY_new();
 					if (!EVP_PKEY_assign_RSA(evp_key, rsa_key)) {
-						fprintf(stderr, "EVP_PKEY assignment failed\n");
+						eprintf("EVP_PKEY assignment failed\n");
 						goto STOP;
 					}
 					PEM_write_PrivateKey(stdout, evp_key, NULL, NULL, 0, NULL, NULL);
 					EVP_PKEY_free(evp_key);
 					goto STOP;
 				} else {
-					fprintf(stderr, "Key invalid:");
+					eprintf("Key invalid:");
 					ERR_print_errors_fp(stderr);
 				}
 			}
@@ -220,7 +247,7 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		for (i = 0; i < thread_count; i++) {
 			total_khashes += khashes[i];
 		}
-		fprintf(stderr, "Last second: %lu kH/s (%.2f kH/s/thread) | Average: %.2f kH/s (%.2f kH/s/thread)\r",
+		iprintf("Last second: %lu kH/s (%.2f kH/s/thread) | Average: %.2f kH/s (%.2f kH/s/thread)\r",
 			total_khashes - last_total_khashes,
 			(double)(total_khashes - last_total_khashes) / thread_count,
 			(double)total_khashes / (loops ? loops : 1),
@@ -228,9 +255,6 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		sleep(1);
 		loops++;
 	}
-
-	/* line feed to finish off carriage return from hashrate fprintf */
-	fputc('\n', stderr);
 }
 
 void
@@ -272,8 +296,8 @@ main(int argc, char **argv) {
 	search_len = strlen(search);
 
 	if ((offset = check_base32(search)) >= 0) {
-		fprintf(stderr,
-			"Error: search contains non-base-32 character(s): %c\n"
+		eprintf(
+			"search contains non-base-32 character(s): %c\n"
 			"I cannot search for something that will never occur\n",
 			search[offset]
 		);
@@ -281,7 +305,7 @@ main(int argc, char **argv) {
 	}
 
 	if (set_raw_params()) {
-		fprintf(stderr, "Search string of poor length\n");
+		eprintf("Search string of poor length\n");
 		return 1;
 	}
 	memset(search_pad, 0, sizeof(search_pad));
@@ -292,12 +316,14 @@ main(int argc, char **argv) {
 
 	workers = calloc(thread_count, sizeof(workers[0]));
 	if (!workers) {
+		eprintf("");
 		perror("worker thread calloc");
 		return 1;
 	}
 
 	khashes = calloc(thread_count, sizeof(khashes[0]));
 	if (!khashes) {
+		eprintf("");
 		perror("hash count array calloc");
 		free(workers);
 		return 1;
@@ -306,19 +332,25 @@ main(int argc, char **argv) {
 	working = 1;
 
 	for (i = 0; i < thread_count; i++) {
-		if (pthread_create(&workers[i], NULL, work, (void*)&khashes[i])) {
+		iprintf("Spawning worker thread %d/%d ... ", i + 1, thread_count);
+		if (pthread_create(&workers[i], NULL, work, (void*)&khashes[i])) { /* FIXME not ! */
+			eprintf("");
 			perror("pthread_create");
 			free((unsigned long*)khashes);
 			free(workers);
 			return 1;
 		}
+		iprintf_bare("Done\r");
 	}
+	iprintf_bare("\n");
 
 	monitor_progress(khashes, thread_count);
 
 	for (i = 0; i < thread_count; i++) {
+		iprintf("Waiting for worker threads (%d/%d) reaped\r", i+1, thread_count);
 		pthread_join(workers[i], NULL);
 	}
+	iprintf_bare("\n");
 
 	free((unsigned long*)khashes);
 	free(workers);
