@@ -236,6 +236,17 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	int i = 0;
 	unsigned long total_khashes = 0;
 	unsigned long last_total_khashes = 0;
+	double hashes_nice = 0;
+	char *hashes_nice_unit = NULL;
+	struct timespec start = {};
+	struct timespec now = {};
+	int seconds = 0;
+	int minutes = 0;
+	int hours = 0;
+	int days = 0;
+	int delta = 0;
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	loops = 0;
 	/* loop while no thread as announced work end; we don't want to
@@ -247,11 +258,43 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		for (i = 0; i < thread_count; i++) {
 			total_khashes += khashes[i];
 		}
-		iprintf("Last second: %lu kH/s (%.2f kH/s/thread) | Average: %.2f kH/s (%.2f kH/s/thread)\r",
+
+		/* compute approximate total hashes for this run and format it
+		 * nicely with a unit and everything */
+		/* FIXME factor out and apply this to the current hashrate display */
+		if (total_khashes > 1e15) {
+			hashes_nice = total_khashes / 1e15;
+			hashes_nice_unit = "E";
+		} else if (total_khashes > 1e12) {
+			hashes_nice = total_khashes / 1e12;
+			hashes_nice_unit = "P";
+		} else if (total_khashes > 1e9) {
+			hashes_nice = total_khashes / 1e9;
+			hashes_nice_unit = "T";
+		} else if (total_khashes > 1e6) {
+			hashes_nice = total_khashes / 1e6;
+			hashes_nice_unit = "G";
+		} else if (total_khashes > 1e3) {
+			hashes_nice = total_khashes / 1e3;
+			hashes_nice_unit = "M";
+		} else {
+			hashes_nice = total_khashes;
+			hashes_nice_unit = "k";
+		}
+
+		/* compute timestamp */
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		delta = now.tv_sec - start.tv_sec;
+		seconds = delta % 60; delta -= seconds; delta /= 60;
+		minutes = delta % 60; delta -= minutes; delta /= 60;
+		hours   = delta % 24; delta -= hours  ; delta /= 24;
+		days    = delta % 24;
+
+		iprintf("[%02d:%02d:%02d:%02d]: %.2f %s hashes%s. Now ~%lu kH/s (%.2f kH/s/thread)\r",
+			days, hours, minutes, seconds,
+			hashes_nice, hashes_nice_unit, (hashes_nice > 1000 ? " (!!)" : ""),
 			total_khashes - last_total_khashes,
-			(double)(total_khashes - last_total_khashes) / thread_count,
-			(double)total_khashes / (loops ? loops : 1),
-			((double)total_khashes / (loops ? loops : 1)) / thread_count);
+			(double)(total_khashes - last_total_khashes) / thread_count);
 		sleep(1);
 		loops++;
 	}
