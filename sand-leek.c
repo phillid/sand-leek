@@ -25,6 +25,13 @@
 
 #define RSA_KEY_BITS          1024
 
+#ifdef CLOCK_MONOTONIC
+#define SL_CLOCK_SOURCE CLOCK_MONOTONIC
+#else
+#warning "This platform has no CLOCK_MONOTONIC, falling back on crappy CLOCK_REALTIME"
+#define SL_CLOCK_SOURCE CLOCK_REALTIME
+#endif
+
 static char *search;
 static char search_pad[16];
 static unsigned char search_raw[10];
@@ -246,8 +253,8 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	unsigned long last_total_khashes = 0;
 	double hashes_nice = 0;
 	char *hashes_nice_unit = NULL;
-	struct timespec start = {};
-	struct timespec now = {};
+	struct timespec start = {0, 0};
+	struct timespec now = {0, 0};
 	int seconds = 0;
 	int minutes = 0;
 	int hours = 0;
@@ -262,7 +269,7 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	est_khashes = pow(32, search_len) / 1000;
 
 	/* FIXME linux-only? Need a portable alternative or (shriek) ifdefs */
-	clock_gettime(CLOCK_MONOTONIC, &start);
+	clock_gettime(SL_CLOCK_SOURCE, &start);
 
 	loops = 0;
 	/* loop while no thread as announced work end; we don't want to
@@ -299,7 +306,7 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		}
 
 		/* compute timestamp */
-		clock_gettime(CLOCK_MONOTONIC, &now);
+		clock_gettime(SL_CLOCK_SOURCE, &now);
 		delta = now.tv_sec - start.tv_sec;
 		nice_time(delta, &seconds, &minutes, &hours, &days);
 
