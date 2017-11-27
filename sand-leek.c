@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 #include <openssl/rsa.h>
 #include <openssl/sha.h>
 #include <openssl/pem.h>
