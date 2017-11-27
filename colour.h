@@ -24,7 +24,8 @@
 #define COLOUR_BOLD_OFF ANSI_ESC"22m"
 
 #define COLOUR_OFF      ANSI_ESC"39m"
-
 #define COLOUR_ALL_OFF  ANSI_ESC"0m"
+
+#define COLOUR_ERASE    ANSI_ESC"2K"
 
 #endif
