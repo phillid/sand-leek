@@ -337,7 +337,7 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		iprintf_bare(COLOUR_ERASE);
 		iprintf("[%02d:%02d:%02d:%02d]: %.2f %s hashes%s. Now ~%lu kH/s (%.2f kH/s/thread). Maybe %ld %s%s %s\r",
 			days, hours, minutes, seconds,
-			hashes_nice, hashes_nice_unit, (hashes_nice > 1000 ? " (!!)" : ""),
+			hashes_nice, hashes_nice_unit, (hashes_nice >= 1000 ? " (!!)" : ""),
 			total_khashes - last_total_khashes,
 			(double)(total_khashes - last_total_khashes) / thread_count,
 			labs(remaining), remaining_unit, (labs(remaining) == 1 ? "" : "s" ),
