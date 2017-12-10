@@ -21,6 +21,8 @@ or a large number of other valid addresses. Beware of using too long a
 search. While you may luck out and get a key quickly, on average, it
 may take a very long time to crack a long search.
 
+![screenshot of sand-leek in operation](sand-leek.png)
+
 ## Platforms Supported
 
 Travis CI performs automated builds and tests on OSX and Linux platforms,
