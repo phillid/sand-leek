@@ -25,8 +25,12 @@ may take a very long time to crack a long search.
 
 ## Platforms Supported
 
-Travis CI performs automated builds and tests on OSX and Linux platforms,
-with both gcc and clang.
+Travis CI performs automated builds and tests on:
+
+* OSX
+* Linux
+
+platforms with both gcc and clang.
 
 Builds and tests have been successfully carried out for:
 
