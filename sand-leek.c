@@ -43,29 +43,25 @@ static volatile char working;
 
 /* "Bare" eprintf that does not change colour, apply prefix, etc.
  * Only directs information to the appropriate stream */
-#define eprintf_bare(format, ...) \
-	fprintf(stderr, \
-	        format, \
-	        ##__VA_ARGS__)
+#define eprintf_bare(...) \
+	fprintf(stderr, __VA_ARGS__)
 
 /* "Real" eprintf, error printf. Outputs a message to stderr, prefixed and
  * coloured all fancy */
-#define eprintf(format, ...) \
+#define eprintf(...) \
 	iprintf_bare(COLOUR_BOLD_OFF COLOUR_RED "ERROR: " \
-	             COLOUR_BWHITE format, ##__VA_ARGS__);
+	             COLOUR_BWHITE __VA_ARGS__);
 
 /* "Bare" iprintf that does not change colour, apply prefix, etc.
  * Only directs information to the appropriate stream */
-#define iprintf_bare(format, ...) \
-	fprintf(stderr, \
-	        format, \
-	        ##__VA_ARGS__)
+#define iprintf_bare(...) \
+	fprintf(stderr, __VA_ARGS__)
 
 /* "Real" iprintf, information printf. Outputs a message to stderr, prefixed
  * and coloured all fancy */
-#define iprintf(format, ...) \
+#define iprintf(...) \
 	iprintf_bare(COLOUR_BOLD_OFF COLOUR_CYAN "INFO: " \
-	             COLOUR_BWHITE format, ##__VA_ARGS__);
+	             COLOUR_BWHITE __VA_ARGS__);
 void*
 work(void *arg) {
 	char onion[17];
