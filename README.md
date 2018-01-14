@@ -56,7 +56,7 @@ similar tools out there when pushing work across cores.
 | Sun Microsystems UltraSPARC-T2              |     1.2 |       7.4 MH/s | 64 | Solaris 10 |
 | ARMv7 Processor rev 4 (v7l)                 |     1.2 |       5.3 MH/s |  4 | RPi 3      |
 | AMD A4-1200 APU with Radeon(TM) HD Graphics |     1.0 |       2.8 MH/s |  2 | x64 Linux  |
-| Intel(R) Pentium(R) M processor 1.60GHz     |     1.6 |       1.9 MH/s |  1 | x64 Linux  |
+| Intel(R) Pentium(R) M processor 1.60GHz     |     1.6 |       1.9 MH/s |  1 | x32 Linux  |
 | ARMv6-compatible processor rev 7 (v6l)      |     0.7 |      0.26 MH/s |  1 | RPi B+     |
 
 ## Inspiration
