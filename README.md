@@ -47,19 +47,19 @@ I am currently finishing and tidying GPU capability on sand leek, through OpenCL
 Preliminary benching shows sand leek to be faster than some of the other
 similar tools out there when pushing work across cores.
 
-| CPU(s)                                      | CPU GHz | Max throughput | -t | Notes      |
-|---------------------------------------------|--------:|---------------:|---:|------------|
+| CPU(s)                                       | CPU GHz | Max throughput | -t | Notes      |
+|----------------------------------------------|--------:|---------------:|---:|------------|
 | 2× Intel(R) Xeon(R) CPU E5-2680 v2 @ 2.80GHz |     2.8 |     147.5 MH/s | 20 | x64 Linux  |
 | 2× Intel(R) Xeon(R) CPU E5-2680 v2 @ 2.80GHz |     2.8 |     136.3 MH/s | 40 | x64 Linux  |
-| 2× Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz |     2.6 |     108.1 MH/s | 32 | x64 Linux  |
-| Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz     |     3.4 |      44.3 MH/s |  8 | x64 Linux  |
-| Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz     |     3.4 |      40.0 MH/s |  8 | x64 Linux  |
-| AMD A6-3430MX with Radeon(TM) HD Graphics   |     1.7 |      12.8 MH/s |  4 | Win64      |
-| Sun Microsystems UltraSPARC-T2              |     1.2 |       7.4 MH/s | 64 | Solaris 10 |
-| ARMv7 Processor rev 4 (v7l)                 |     1.2 |       5.3 MH/s |  4 | RPi 3      |
-| AMD A4-1200 APU with Radeon(TM) HD Graphics |     1.0 |       2.8 MH/s |  2 | x64 Linux  |
-| Intel(R) Pentium(R) M processor 1.60GHz     |     1.6 |       1.9 MH/s |  1 | x32 Linux  |
-| ARMv6-compatible processor rev 7 (v6l)      |     0.7 |      0.26 MH/s |  1 | RPi B+     |
+| 2× Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz  |     2.6 |     108.1 MH/s | 32 | x64 Linux  |
+| Intel(R) Core(TM) i7-6700 CPU @ 3.40GHz      |     3.4 |      44.3 MH/s |  8 | x64 Linux  |
+| Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz      |     3.4 |      40.0 MH/s |  8 | x64 Linux  |
+| AMD A6-3430MX with Radeon(TM) HD Graphics    |     1.7 |      12.8 MH/s |  4 | Win64      |
+| Sun Microsystems UltraSPARC-T2               |     1.2 |       7.4 MH/s | 64 | Solaris 10 |
+| ARMv7 Processor rev 4 (v7l)                  |     1.2 |       5.3 MH/s |  4 | RPi 3      |
+| AMD A4-1200 APU with Radeon(TM) HD Graphics  |     1.0 |       2.8 MH/s |  2 | x64 Linux  |
+| Intel(R) Pentium(R) M processor 1.60GHz      |     1.6 |       1.9 MH/s |  1 | x32 Linux  |
+| ARMv6-compatible processor rev 7 (v6l)       |     0.7 |      0.26 MH/s |  1 | RPi B+     |
 
 ## Inspiration
 sand leek was greatly inspired by schallot, escahlot and scallion.
