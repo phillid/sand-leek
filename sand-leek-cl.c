@@ -31,7 +31,7 @@ int truffle_valid(unsigned char *search_raw, int raw_len, char bitmask, struct s
 	unsigned char digest[20] = {};
 	sha_update(&sha, e, 4);
 	sha_final(&digest, &sha);
-	fprintf(stderr, "Need    %x%x%x%x%x%x%x%x%x%x    (%d)\n",
+	fprintf(stderr, "Need    %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x    (%d)\n",
 		search_raw[0],
 		search_raw[1],
 		search_raw[2],
@@ -44,7 +44,7 @@ int truffle_valid(unsigned char *search_raw, int raw_len, char bitmask, struct s
 		search_raw[9],
 		raw_len
 	);
-	fprintf(stderr, "GPU got %x%x%x%x%x%x%x%x%x%x\n",
+	fprintf(stderr, "GPU got %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
 		digest[0],
 		digest[1],
 		digest[2],
@@ -109,15 +109,40 @@ unsigned long run(const char *preferred_platform, unsigned char *search_raw, siz
 	}
 	fprintf(stderr, "Done.\n");
 
-	fprintf(stderr, "Transferring partial SHA work to device... ");
+	/* pre-adjust context for modofications that are common to all GPU threads */
+	sha->data_len += 4;
+	sha->len += 4;
+
+	/* pre-load end-mark bit */
+	sha->data[sha->data_len] = 0x80;
+
+	sha->len *= 8;
+	/* FIXME loop or leave unrolled? */
+	sha->data[56] = sha->len >> 56;
+	sha->data[57] = sha->len >> 48;
+	sha->data[58] = sha->len >> 40;
+	sha->data[59] = sha->len >> 32;
+	sha->data[60] = sha->len >> 24;
+	sha->data[61] = sha->len >> 16;
+	sha->data[62] = sha->len >> 8;
+	sha->data[63] = sha->len;
+
+
+	fprintf(stderr, "Transferring partial SHA work to device (data len is at %d, len is at %d)... ", sha->data_len, sha->len);
 	if (tramp_copy_sha(sha)) {
 		fprintf(stderr, "Failed.\n");
 		return 1;
 	}
 	fprintf(stderr, "Done.\n");
 
+	/* un-adjust context for modofications that are common to all GPU threads */
+	sha->len /= 8;
+	sha->data_len -= 4;
+	sha->len -= 4;
+
 	fprintf(stderr, "Running kernel... ");
 	clock_gettime(CLOCK_MONOTONIC, &tv_start);
+
 /* FIXME magic */
 /* 65536 kernels doing 32767 each, except if it's 00xxxxxx */
 #define HASH_PER_RUN ((65536UL*32767UL) - (1<<24))
@@ -126,6 +151,7 @@ unsigned long run(const char *preferred_platform, unsigned char *search_raw, siz
 		return 1;
 	}
 	clock_gettime(CLOCK_MONOTONIC, &tv_end);
+
 	/*FIXME*/double clock_delta = tv_delta(&tv_start, &tv_end);
 	fprintf(stderr, "Done in %.2f seconds (%.3f MH/s).\n", clock_delta, (HASH_PER_RUN/clock_delta/1e6));
 

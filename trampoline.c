@@ -311,7 +311,7 @@ int tramp_compile_kernel()
 		return 1;
 	}
 
-	kernel = clCreateKernel(program, "fractal_gen", &ret);
+	kernel = clCreateKernel(program, "key_brute", &ret);
 
 	if (ret != CL_SUCCESS) {
 		fprintf(stderr, "Failed to create kernel: %s ", get_cl_error_string(ret));
