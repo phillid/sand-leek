@@ -185,7 +185,6 @@ int main(int argc, char **argv)
 	}
 	fprintf(stderr, "Done.\n");
 
-	/*FIXME*/uint32_t eBE = 0;
 	/* FIXME */cl_int *buffer = malloc(4*65536);
 	/* FIXME */unsigned long key_number = 1;
 
@@ -290,14 +289,14 @@ int main(int argc, char **argv)
 				byte_e[3] = smalls & 0xFF;
 
 				if (truffle_valid(search_raw, raw_len, bitmask, sha_c, byte_e)) {
-					eBE = byte_e[0] << 24 | byte_e[1] << 16 | byte_e[2] << 8 | byte_e[3];
+					e = byte_e[0] << 24 | byte_e[1] << 16 | byte_e[2] << 8 | byte_e[3];
 				} else {
 					fprintf(stderr, "GPU doesn't agree with CPU: bug or hardware fault?\n");
 				}
 				break;
 			}
 		}
-	} while (eBE == 0);
+	} while (e == 0);
 	fprintf(stderr, "Done.\n");
 
 	fprintf(stderr, "Destroying CL trampoline... ");
@@ -305,15 +304,6 @@ int main(int argc, char **argv)
 	fprintf(stderr, "Blown to smitherines.\n");
 
 	free(buffer);
-
-
-
-
-
-//	e = run(preferred_platform, search_raw, raw_len, search_len, &sha_c);
-	e = eBE; /* FIXME */
-
-//fprintf(stderr, "exponent is %lx\n", e);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	if (BN_set_word(bignum_e, e) != 1) {
