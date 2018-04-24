@@ -2,9 +2,9 @@
 #include <string.h>
 #include <opencl.h>
 
+#include "trampoline.h"
 #include "cl_error.h"
 #include "slurp.h"
-#include "sha1.h"
 
 static cl_platform_id platform;
 static cl_context context;
@@ -395,7 +395,7 @@ int tramp_run_kernel()
 	cl_event event;
 	cl_int ret = 0;
 	size_t workgroup_sizes[2];
-	workgroup_sizes[0] = 32768;
+	workgroup_sizes[0] = SL_WORK_THREADS;
 	workgroup_sizes[1] = 1;
 
 	ret = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, workgroup_sizes, NULL, 0, NULL, &event);
@@ -457,7 +457,7 @@ int tramp_copy_sha(struct sha_data *sha)
  *
  * Returns 0 on success, non-zero otherwise.
  */
-int tramp_copy_search(unsigned int search_raw[10])
+int tramp_copy_search(unsigned char search_raw[10])
 {
 	cl_event event;
 	cl_int ret = 0;

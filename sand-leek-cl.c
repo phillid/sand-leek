@@ -1,9 +1,9 @@
-/* FIXME magic */
-/* 32768 kernels doing 32767 each, except if it's 0xxxxxxx */
-#define HASH_PER_RUN ((32768UL*32767UL) - (1<<24))
+/* SL_WORK_THREADS kernels doing 32767 exponents each, except if it's 00xxxxxx */
+#define HASH_PER_RUN ((SL_WORK_THREADS*32767UL) - (1<<24))
 #define EXPONENT_MAX 0x1FFFFFFFUL
 #define EXPONENT_SIZE_BYTES 4
 #define RSA_KEY_BITS 1024
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -197,7 +197,7 @@ int main(int argc, char **argv)
 	}
 	fprintf(stderr, "Done.\n");
 
-	/* FIXME */cl_int *buffer = malloc(sizeof(cl_int)*65536);
+	/* FIXME */cl_int *buffer = malloc(sizeof(cl_int)*SL_WORK_THREADS);
 
 	/* FIXME check for error */
 	bignum_e = BN_new();
@@ -278,7 +278,7 @@ int main(int argc, char **argv)
 			perror("host data buffer malloc");
 			return 1;
 		}
-		if (tramp_copy_data((void*)&buffer, sizeof(cl_int)*65536)) {
+		if (tramp_copy_data((void*)&buffer, sizeof(cl_int)*SL_WORK_THREADS)) {
 			fprintf(stderr, "Failed.\n");
 			return 1;
 		}
@@ -287,7 +287,7 @@ int main(int argc, char **argv)
 		/* FIXME */ int count = 0;
 		/* FIXME BUG: temporarily looping backwards to increase chance of using
 		 * something beginning with bit '1' as our exponent to highligt bug */
-		for (i = 0; i < 65536; i++) {
+		for (i = 0; i < SL_WORK_THREADS; i++) {
 			if (buffer[i] != 0) {
 				count++;
 				/* FIXME */uint16_t smalls = (unsigned int)buffer[i];

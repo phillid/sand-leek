@@ -1,5 +1,7 @@
 #include "sha1.h"
 
+#define SL_WORK_THREADS 32768
+
 int tramp_init(const char *preferred_platform);
 void tramp_destroy(void);
 int tramp_load_kernel(const char *filename);
