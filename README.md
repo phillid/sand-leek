@@ -37,6 +37,12 @@ similar tools out there when pushing work across cores.
 | Intel(R) Pentium(R) M processor 1.60GHz     |       1.9 MH/s |  1 |
 | ARMv6-compatible processor rev 7 (v6l)      |      0.26 MH/s |  1 |
 
+
+| GPU(s)                                      | Max throughput |
+|---------------------------------------------|---------------:|
+| NVIDIA Corporation GP104 [GeForce GTX 1070] |      3505 MH/s |
+| NVIDIA Corporation GM107GL (Quadro K1200)   |       467 MH/s |
+
 ## Inspiration
 sand leek was greatly inspired by schallot, escahlot and scallion.
 
