@@ -68,7 +68,7 @@ int truffle_valid(RSA *rsa_key, const char *search, uint32_t e) {
 	onion_base32(onion, (unsigned char*)&digest);
 	onion[16] = '\0';
 
-	fprintf(stderr, "GPU got %s.onion\n", onion, search);
+	fprintf(stderr, "GPU got %s.onion\n", onion);
 
 	return strncmp(onion, search, strlen(search) - 1) == 0;
 }
