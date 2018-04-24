@@ -31,7 +31,7 @@ void sha_chunk(uint8_t (*buf)[SHA_CHUNK_LEN], struct sha_data *sha) {
 		0xCA62C1D6
 	};
 
-	for (i = 0; i < 80; i++, bo+=4) {
+	for (i = 0; i < 16; i++, bo+=4) {
 		w[i] = ((uint32_t)(*buf)[bo]) << 24;
 		w[i] |= (*buf)[bo+1] << 16;
 		w[i] |= (*buf)[bo+2] << 8;

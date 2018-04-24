@@ -32,7 +32,7 @@ void sha_chunk(unsigned char (*buf)[SHA_CHUNK_LEN], struct sha_data *sha) {
 	};
 
 	#pragma unroll
-	for (i = 0; i < 80; i++, bo+=4) {
+	for (i = 0; i < 16; i++, bo+=4) {
 		w[i] = ((*buf)[bo]) << 24;
 		w[i] |= ((*buf)[bo+1]) << 16;
 		w[i] |= ((*buf)[bo+2]) << 8;
