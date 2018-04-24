@@ -395,7 +395,7 @@ int tramp_run_kernel()
 	cl_event event;
 	cl_int ret = 0;
 	size_t workgroup_sizes[2];
-	workgroup_sizes[0] = 63356;
+	workgroup_sizes[0] = 65536;
 	workgroup_sizes[1] = 1;
 
 	ret = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, workgroup_sizes, NULL, 0, NULL, &event);

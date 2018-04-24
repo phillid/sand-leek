@@ -17,7 +17,7 @@ char *slurp(FILE *f, size_t *size)
 	while (!feof(f)) {
 		nread = fread(&buffer[*size], 1, BUFFER_STEP, f);
 		*size += nread;
-		printf("size is %d\n",*size);
+		fprintf(stderr, "size is %d\n",*size);
 		buffer = realloc(buffer, *size);
 		if (!buffer) {
 			perror("realloc");
