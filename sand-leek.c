@@ -18,7 +18,7 @@
 #include "key_update.h"
 #include "colour.h"
 
-#define VERSION "0.5"
+#define VERSION "1"
 
 #define EXPONENT_SIZE_BYTES   4
 #define EXPONENT_MIN          0x1FFFFFFF
