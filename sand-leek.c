@@ -33,6 +33,7 @@
 #define SL_CLOCK_SOURCE CLOCK_REALTIME
 #endif
 
+static char no_ansi_esc = 0;
 static char *search;
 static char search_pad[16];
 static unsigned char search_raw[10];
@@ -46,22 +47,36 @@ static volatile char working;
 #define eprintf_bare(...) \
 	fprintf(stderr, __VA_ARGS__)
 
-/* "Real" eprintf, error printf. Outputs a message to stderr, prefixed and
- * coloured all fancy */
-#define eprintf(...) \
-	iprintf_bare(COLOUR_BOLD_OFF COLOUR_RED "ERROR: " \
-	             COLOUR_BWHITE __VA_ARGS__);
-
 /* "Bare" iprintf that does not change colour, apply prefix, etc.
  * Only directs information to the appropriate stream */
 #define iprintf_bare(...) \
 	fprintf(stderr, __VA_ARGS__)
 
+
+#ifndef SAND_LEEK_DISABLE_COLOUR
+/* "Real" eprintf, error printf. Outputs a message to stderr, prefixed and
+ * coloured all fancy */
+#define eprintf(format, ...) \
+	iprintf_bare("%sERROR: %s" format, \
+	             no_ansi_esc ? "" : COLOUR_BOLD_OFF COLOUR_RED, \
+	             no_ansi_esc ? "" : COLOUR_BWHITE, \
+	             ##__VA_ARGS__);
+
 /* "Real" iprintf, information printf. Outputs a message to stderr, prefixed
  * and coloured all fancy */
+#define iprintf(format, ...) \
+	iprintf_bare("%sINFO: %s" format, \
+	             no_ansi_esc ? "" : COLOUR_BOLD_OFF COLOUR_CYAN, \
+	             no_ansi_esc ? "" : COLOUR_BWHITE, \
+	             ##__VA_ARGS__);
+#else /* SAND_LEEK_DISABLE_COLOUR */
+#define eprintf(...) \
+	iprintf_bare("ERROR: " __VA_ARGS__);
+
 #define iprintf(...) \
-	iprintf_bare(COLOUR_BOLD_OFF COLOUR_CYAN "INFO: " \
-	             COLOUR_BWHITE __VA_ARGS__);
+	iprintf_bare("INFO: " __VA_ARGS__);
+#endif /* SAND_LEEK_DISABLE_COLOUR */
+
 void*
 work(void *arg) {
 	char onion[17];
@@ -331,7 +346,11 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 			remaining_unit = "year";
 		}
 
-		iprintf_bare(COLOUR_ERASE);
+#ifndef SAND_LEEK_DISABLE_COLOUR
+		if (!no_ansi_esc) {
+			iprintf_bare(COLOUR_ERASE);
+		}
+#endif
 		iprintf("[%02d:%02d:%02d:%02d]: %.2f %s hashes%s. Now ~%lu kH/s (%.2f kH/s/thread). Maybe %ld %s%s %s\r",
 			days, hours, minutes, seconds,
 			hashes_nice, hashes_nice_unit, (hashes_nice >= 1000 ? " (!!)" : ""),
@@ -359,7 +378,7 @@ main(int argc, char **argv) {
 	pthread_t *workers = NULL;
 	volatile unsigned long *khashes = NULL;
 
-	while ((opt = getopt(argc, argv, "t:s:V")) != -1) {
+	while ((opt = getopt(argc, argv, "t:s:VA")) != -1) {
 		switch (opt) {
 		case 'V':
 			show_version();
@@ -370,6 +389,13 @@ main(int argc, char **argv) {
 		case 's':
 			search = optarg;
 			break;
+		case 'A':
+			no_ansi_esc = 1;
+			break;
+		case '?':
+		default:
+			return 1;
+			break; /* unreachable */
 		}
 	}
 
