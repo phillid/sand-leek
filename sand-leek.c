@@ -35,7 +35,7 @@
 
 static char no_ansi_esc = 0;
 static char *search;
-static char search_pad[16];
+static char search_pad[17];
 static unsigned char search_raw[10];
 static size_t search_len;
 static int raw_len;
@@ -425,7 +425,7 @@ main(int argc, char **argv) {
 		return 1;
 	}
 	memset(search_pad, 0, sizeof(search_pad));
-	strncpy(search_pad, search, sizeof(search_pad));
+	strncpy(search_pad, search, sizeof(search_pad)-1);
 
 	/* decode desired base32 */
 	onion_base32_dec(search_raw, search_pad);
