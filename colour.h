@@ -1,6 +1,8 @@
 #ifndef SAND_LEEK_COLOUR_H
 #define SAND_LEEK_COLOUR_H
 
+#ifndef SAND_LEEK_DISABLE_COLOUR
+
 #define ANSI_ESC        "\x1b["
 #define COLOUR_BLACK    ANSI_ESC"30m"
 #define COLOUR_RED      ANSI_ESC"31m"
@@ -28,4 +30,35 @@
 
 #define COLOUR_ERASE    ANSI_ESC"2K"
 
-#endif
+#else /* ifndef SAND_LEEK_DISABLE_COLOUR */
+
+#define ANSI_ESC        ""
+#define COLOUR_BLACK    ""
+#define COLOUR_RED      ""
+#define COLOUR_GREEN    ""
+#define COLOUR_YELLOW   ""
+#define COLOUR_BLUE     ""
+#define COLOUR_MAGENTA  ""
+#define COLOUR_CYAN     ""
+#define COLOUR_WHITE    ""
+
+#define COLOUR_BBLACK   ""
+#define COLOUR_BRED     ""
+#define COLOUR_BGREEN   ""
+#define COLOUR_BYELLOW  ""
+#define COLOUR_BBLUE    ""
+#define COLOUR_BMAGENTA ""
+#define COLOUR_BCYAN    ""
+#define COLOUR_BWHITE   ""
+
+#define COLOUR_BOLD     ""
+#define COLOUR_BOLD_OFF ""
+
+#define COLOUR_OFF      ""
+#define COLOUR_ALL_OFF  ""
+
+#define COLOUR_ERASE    ""
+
+#endif /* ifndef SAND_LEEK_DISABLE_COLOUR */
+
+#endif /* #ifndef SAND_LEEK_COLOUR_H */

@@ -34,7 +34,7 @@ platforms with both gcc and clang.
 
 Builds and tests have been successfully carried out for:
 
-* Windows with MinGW on Linux
+* Windows with MinGW on Linux - I cannot support coloured  output for Windows
 * Solaris 10
 
 but these are not automated, nor are they part of the primarily supported
@@ -64,3 +64,6 @@ similar tools out there when pushing work across cores.
 ## Inspiration
 sand leek was greatly inspired by schallot, escahlot and scallion.
 
+## Compile-time flags
+
+* `SAND_LEEK_DISABLE_COLOUR` - Don't compile in any support for coloured output. Recommended for Windows builds unless support can be had for ANSI escape sequences
