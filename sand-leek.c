@@ -243,8 +243,10 @@ set_raw_params(void) {
 void
 die_usage(const char *argv0) {
 	fprintf(stderr,
-		"usage: %s [-t threads] -s search\n"
-		"searches for keys for onion addresses beginning with `search`\n",
+		"usage: %s [-t threads] [-A] -s search\n"
+		"searches for keys for onion addresses beginning with `search`.\n"
+		"Specifying -A disables the use of ANSI escape sequences, which cause\n"
+		"are not interpreted on some terminals (powershell, cmd.exe)\n",
 		argv0
 		);
 	exit(1);
