@@ -1,2 +1,4 @@
-usage: ../../sand-leek [-t threads] -s search
-searches for keys for onion addresses beginning with `search`
+usage: ../../sand-leek [-t threads] [-A] -s search
+searches for keys for onion addresses beginning with `search`.
+Specifying -A disables the use of ANSI escape sequences, which cause
+are not interpreted on some terminals (powershell, cmd.exe)
