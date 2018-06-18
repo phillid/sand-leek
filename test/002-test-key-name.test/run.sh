@@ -16,7 +16,7 @@ echo "sand-leek says it found $found..."
 real="$( \
 	openssl rsa -in $key -pubout -outform DER \
 	| tail -c +23 \
-	| shasum \
+	| sha1sum \
 	| head -c 20 \
 	| python -c "import base64,sys,codecs; print(base64.b32encode(codecs.decode(sys.stdin.readline().strip('\n'), 'hex')).decode().lower())").onion"
 
