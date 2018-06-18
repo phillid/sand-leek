@@ -1,5 +1,7 @@
 #include <unistd.h>
 
+#include "unit_label.h"
+
 /* Assign *unit a unit string from table unit_label that best fits value.
  * returns the value reduced by the chosen unit's magnitude
  *
