@@ -1,5 +1,8 @@
 struct unit_label {
-	double lower_bound;
+	/* number of times this unit fits into the immediate larger one */
+	double count;
+
+	/* label for the unit*/
 	char *label;
 };
 
