@@ -274,9 +274,9 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	int hours = 0;
 	int days = 0;
 	long delta = 0;
-	long est_khashes = 0;
-	long remaining = 0;
-	long remaining_abs = 0;
+	double est_khashes = 0;
+	double remaining = 0;
+	double remaining_abs = 0;
 	char *remaining_unit = NULL;
 
 	/* estimated khashes required for approximate certainty of finding a key */
@@ -331,7 +331,8 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		}
 
 		/* FIXME factor out */
-		remaining_abs = labs(remaining);
+		/* this was supposed to be temporary, why is it still here? */
+		remaining_abs = fabs(remaining);
 		if (remaining_abs < 60) {
 			remaining_unit = "second";
 		} else if (remaining_abs < 60*60) {
@@ -343,9 +344,21 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		} else if (remaining_abs < 60*60*24*365.25) {
 			remaining = (remaining + 43200) / 86400;
 			remaining_unit = "day";
-		} else {
+		} else if (remaining_abs < 60*60*24*365.25*1e3) {
 			remaining = (remaining + (60*60*24*365.25)/2) / (60*60*24*365.25);
 			remaining_unit = "year";
+		} else if (remaining_abs < 60*60*24*365.25*1e6) {
+			remaining = (remaining + (60*60*24*365.25*1e3)/2) / (60*60*24*365.25*1e3);
+			remaining_unit = "thousand year";
+		} else if (remaining_abs < 60*60*24*365.25*1e9) {
+			remaining = (remaining + (60*60*24*365.25*1e6)/2) / (60*60*24*365.25*1e6);
+			remaining_unit = "million year";
+		} else if (remaining_abs < 60*60*24*365.25*1e12) {
+			remaining = (remaining + (60*60*24*365.25*1e9)/2) / (60*60*24*365.25*1e9);
+			remaining_unit = "billion year";
+		} else if (remaining_abs < 60*60*24*365.25*1e15) {
+			remaining = (remaining + (60*60*24*365.25*1e12)/2) / (60*60*24*365.25*1e12);
+			remaining_unit = "trillion year";
 		}
 
 #ifndef SAND_LEEK_DISABLE_COLOUR
@@ -353,12 +366,13 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 			iprintf_bare(COLOUR_ERASE);
 		}
 #endif
-		iprintf("[%02d:%02d:%02d:%02d]: %.2f %s hashes%s. Now ~%lu kH/s (%.2f kH/s/thread). Maybe %ld %s%s %s\r",
+		/* FIXME prints incorrect English e.g. "1 billion year" */
+		iprintf("[%02d:%02d:%02d:%02d]: %.2f %s hashes%s. Now ~%lu kH/s (%.2f kH/s/thread). Maybe %.1f %s%s %s\r",
 			days, hours, minutes, seconds,
 			hashes_nice, hashes_nice_unit, (hashes_nice >= 1000 ? " (!!)" : ""),
 			total_khashes - last_total_khashes,
 			(double)(total_khashes - last_total_khashes) / thread_count,
-			labs(remaining), remaining_unit, (labs(remaining) == 1 ? "" : "s" ),
+			fabs(remaining), remaining_unit, (fabs(remaining) == 1 ? "" : "s" ),
 			(remaining < 0 ? "overdue" : "left")
 			);
 		sleep(1);
