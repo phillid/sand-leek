@@ -17,6 +17,7 @@
 #include "onion_base32.h"
 #include "key_update.h"
 #include "colour.h"
+#include "unit_label.h"
 
 #define VERSION "1"
 
@@ -41,6 +42,30 @@ static size_t search_len;
 static int raw_len;
 static char bitmask;
 static volatile char working;
+
+static const struct unit_label khash_labels[] = {
+	{1000, "k" },
+	{1000, "M" },
+	{1000, "G" },
+	{1000, "T" },
+	{1000, "P" },
+	{1000, "E" },
+	{   0, NULL}
+};
+
+static const struct unit_label time_labels[] = {
+	{    60, "second"       },
+	{    60, "minute"       },
+	{    24, "hour"         },
+	{365.25, "day"          },
+	{  1000, "year"         },
+	{  1000, "thousand year"},
+	{  1000, "million year" },
+	{  1000, "billion year" },
+	{  1000, "trillion year"},
+	{     0,  NULL          }
+};
+
 
 /* "Bare" eprintf that does not change colour, apply prefix, etc.
  * Only directs information to the appropriate stream */
@@ -296,28 +321,7 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 			total_khashes += khashes[i];
 		}
 
-		/* compute approximate total hashes for this run and format it
-		 * nicely with a unit and everything */
-		/* FIXME factor out and apply this to the current hashrate display */
-		if (total_khashes > 1e15) {
-			hashes_nice = total_khashes / 1e15;
-			hashes_nice_unit = "E";
-		} else if (total_khashes > 1e12) {
-			hashes_nice = total_khashes / 1e12;
-			hashes_nice_unit = "P";
-		} else if (total_khashes > 1e9) {
-			hashes_nice = total_khashes / 1e9;
-			hashes_nice_unit = "T";
-		} else if (total_khashes > 1e6) {
-			hashes_nice = total_khashes / 1e6;
-			hashes_nice_unit = "G";
-		} else if (total_khashes > 1e3) {
-			hashes_nice = total_khashes / 1e3;
-			hashes_nice_unit = "M";
-		} else {
-			hashes_nice = total_khashes;
-			hashes_nice_unit = "k";
-		}
+		hashes_nice = make_unit_whatsit(khash_labels, &hashes_nice_unit, total_khashes);
 
 		/* compute timestamp */
 		clock_gettime(SL_CLOCK_SOURCE, &now);
@@ -330,36 +334,8 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 			remaining = (est_khashes/(total_khashes-last_total_khashes)) - delta;
 		}
 
-		/* FIXME factor out */
-		/* this was supposed to be temporary, why is it still here? */
 		remaining_abs = fabs(remaining);
-		if (remaining_abs < 60) {
-			remaining_unit = "second";
-		} else if (remaining_abs < 60*60) {
-			remaining = (remaining + 30) / 60;
-			remaining_unit = "minute";
-		} else if (remaining_abs < 60*60*24) {
-			remaining = (remaining + 1800) / 3600;
-			remaining_unit = "hour";
-		} else if (remaining_abs < 60*60*24*365.25) {
-			remaining = (remaining + 43200) / 86400;
-			remaining_unit = "day";
-		} else if (remaining_abs < 60*60*24*365.25*1e3) {
-			remaining = (remaining + (60*60*24*365.25)/2) / (60*60*24*365.25);
-			remaining_unit = "year";
-		} else if (remaining_abs < 60*60*24*365.25*1e6) {
-			remaining = (remaining + (60*60*24*365.25*1e3)/2) / (60*60*24*365.25*1e3);
-			remaining_unit = "thousand year";
-		} else if (remaining_abs < 60*60*24*365.25*1e9) {
-			remaining = (remaining + (60*60*24*365.25*1e6)/2) / (60*60*24*365.25*1e6);
-			remaining_unit = "million year";
-		} else if (remaining_abs < 60*60*24*365.25*1e12) {
-			remaining = (remaining + (60*60*24*365.25*1e9)/2) / (60*60*24*365.25*1e9);
-			remaining_unit = "billion year";
-		} else if (remaining_abs < 60*60*24*365.25*1e15) {
-			remaining = (remaining + (60*60*24*365.25*1e12)/2) / (60*60*24*365.25*1e12);
-			remaining_unit = "trillion year";
-		}
+		remaining_abs = make_unit_whatsit(time_labels, &remaining_unit, remaining_abs);
 
 #ifndef SAND_LEEK_DISABLE_COLOUR
 		if (!no_ansi_esc) {
@@ -372,7 +348,7 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 			hashes_nice, hashes_nice_unit, (hashes_nice >= 1000 ? " (!!)" : ""),
 			total_khashes - last_total_khashes,
 			(double)(total_khashes - last_total_khashes) / thread_count,
-			fabs(remaining), remaining_unit, (fabs(remaining) == 1 ? "" : "s" ),
+			remaining_abs, remaining_unit, (remaining_abs == 1.0 ? "" : "s" ),
 			(remaining < 0 ? "overdue" : "left")
 			);
 		sleep(1);
