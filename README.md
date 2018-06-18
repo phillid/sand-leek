@@ -2,6 +2,7 @@
 experimental vanity onion address whatchamacallit
 
 [![Build Status](https://travis-ci.org/phillid/sand-leek.svg?branch=master)](https://travis-ci.org/phillid/sand-leek)
+[![Pipeline status](https://gitlab.com/dphillips/sand-leek/badges/master/pipeline.svg)](https://gitlab.com/dphillips/sand-leek/commits/master)
 
 ## Usage
 
