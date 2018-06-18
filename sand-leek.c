@@ -291,7 +291,11 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 	unsigned long total_khashes = 0;
 	unsigned long last_total_khashes = 0;
 	double hashes_nice = 0;
+	double net_khash_nice = 0;
+	double net_khash_t_nice = 0;
 	char *hashes_nice_unit = NULL;
+	char *net_khash_nice_unit = NULL;
+	char *net_khash_t_nice_unit = NULL;
 	struct timespec start = {0, 0};
 	struct timespec now = {0, 0};
 	int seconds = 0;
@@ -336,6 +340,8 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 
 		remaining_abs = fabs(remaining);
 		remaining_abs = make_unit_whatsit(time_labels, &remaining_unit, remaining_abs);
+		net_khash_nice = make_unit_whatsit(khash_labels, &net_khash_nice_unit, total_khashes - last_total_khashes);
+		net_khash_t_nice = make_unit_whatsit(khash_labels, &net_khash_t_nice_unit, (double)(total_khashes - last_total_khashes) / (thread_count));
 
 #ifndef SAND_LEEK_DISABLE_COLOUR
 		if (!no_ansi_esc) {
@@ -343,11 +349,11 @@ monitor_progress(unsigned long volatile *khashes, int thread_count) {
 		}
 #endif
 		/* FIXME prints incorrect English e.g. "1 billion year" */
-		iprintf("[%02d:%02d:%02d:%02d]: %.2f %s hashes%s. Now ~%lu kH/s (%.2f kH/s/thread). Maybe %.1f %s%s %s\r",
+		iprintf("[%02d:%02d:%02d:%02d]: %.2f %s hashes%s. Now ~%.2f %sH/s (%.2f %sH/s/thread). Maybe %.1f %s%s %s\r",
 			days, hours, minutes, seconds,
 			hashes_nice, hashes_nice_unit, (hashes_nice >= 1000 ? " (!!)" : ""),
-			total_khashes - last_total_khashes,
-			(double)(total_khashes - last_total_khashes) / thread_count,
+			net_khash_nice, net_khash_nice_unit,
+			net_khash_t_nice, net_khash_t_nice_unit,
 			remaining_abs, remaining_unit, (remaining_abs == 1.0 ? "" : "s" ),
 			(remaining < 0 ? "overdue" : "left")
 			);
