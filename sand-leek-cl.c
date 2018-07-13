@@ -287,8 +287,6 @@ int main(int argc, char **argv)
 
 		/* FIXME */ int i = 0;
 		/* FIXME */ int count = 0;
-		/* FIXME BUG: temporarily looping backwards to increase chance of using
-		 * something beginning with bit '1' as our exponent to highligt bug */
 		for (i = 0; i < SL_WORK_THREADS; i++) {
 			if (buffer[i] != 0) {
 				count++;
