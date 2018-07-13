@@ -120,6 +120,7 @@ __kernel void key_brute(
 	const unsigned int bitmask)
 {
 	unsigned int tx = get_global_id(0);
+	unsigned int ty = get_global_id(1);
 	unsigned int i,j;
 
 	struct sha_data ctx;
@@ -158,48 +159,15 @@ __kernel void key_brute(
 		ctx.data[INITIAL_DATA_LEN + 3] = i;
 /////////////////////////////////////////////////////////////
 		sha_final(&digest, &ctx);
-		int all_clear;
-		switch (raw_length) {
-			case 10: /* nop */ break;
-			case  9: all_clear =  (search[9] & bitmask) == (bitmask & (ctx.c >> 24)); break;
-			case  8: all_clear =  (search[8] & bitmask) == (bitmask & (ctx.b	  )); break;
-			case  7: all_clear =  (search[7] & bitmask) == (bitmask & (ctx.b >>  8)); break;
-			case  6: all_clear =  (search[6] & bitmask) == (bitmask & (ctx.b >> 16)); break;
-			case  5: /* nop */ break;
-			case  4: all_clear =  (search[4] & bitmask) == (bitmask & (ctx.b >> 24)); break;
-			case  3: all_clear =  (search[3] & bitmask) == (bitmask & (ctx.a	  )); break;
-			case  2: all_clear =  (search[2] & bitmask) == (bitmask & (ctx.a >>  8)); break;
-			case  1: all_clear =  (search[1] & bitmask) == (bitmask & (ctx.a >> 16)); break;
-			case  0: all_clear =  (search[0] & bitmask) == (bitmask & (ctx.a >> 24)); break;
-
+		int all_clear = 1;
+		for (j = 0; j < raw_length; j++) {
+			if (search[j] != digest[j]) {
+				all_clear = 0;
+			}
 		}
-
-		switch (raw_length) {
-			case 10: all_clear &= (search[9] == ctx.c >> 16); /* fallthrough */
-			case  9: all_clear &= (search[8] == ctx.c >> 24); /* fallthrough */
-			case  8: all_clear &= (search[7] == ctx.b); /* fallthrough */
-			case  7: all_clear &= (search[6] == ctx.b >> 8); /* fallthrough */
-			case  6: all_clear &= (search[5] == ctx.b >> 16); /* fallthrough */
-			case  5: all_clear &= (search[4] == ctx.b >> 24); /* fallthrough */
-			case  4: all_clear &= (search[3] == ctx.a); /* fallthrough */
-			case  3: all_clear &= (search[2] == ctx.a >> 8); /* fallthrough */
-			case  2: all_clear &= (search[1] == ctx.a >> 16); /* fallthrough */
-			case  1: all_clear &= (search[0] == ctx.a >> 24); /* fallthrough */
-			case  0: /* nop */;
-		}
-		if (all_clear != 0) {
+		if (all_clear == 1 && (digest[j] & bitmask) == (search[j] & bitmask)) {
 			results[tx] = i;
 		}
-
-//		int all_clear = 1;
-//		for (j = 0; j < raw_length; j++) {
-//			if (search[j] != digest[j]) {
-//				all_clear = 0;
-//			}
-//		}
-//		if (all_clear == 1 && (digest[j] & bitmask) == (search[j] & bitmask)) {
-//			results[tx] = i;
-//		}
 	}
 
 	return;
