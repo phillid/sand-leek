@@ -45,17 +45,17 @@ int truffle_valid(RSA *rsa_key, const char *search, uint32_t e) {
 
 	der_length = i2d_RSAPublicKey(rsa_key, NULL);
 	if (der_length <= 0) {
-		fprintf(stderr, "i2d failed\n");
+		fprintf(stderr, "\ni2d failed\n");
 		return 1;
 	}
 	der_data = malloc(der_length);
 	if (!der_data) {
-		fprintf(stderr, "DER data malloc failed\n");
+		fprintf(stderr, "\nDER data malloc failed\n");
 		return 1;
 	}
 	tmp_data = der_data;
 	if (i2d_RSAPublicKey(rsa_key, &tmp_data) != der_length) {
-		fprintf(stderr, "DER formatting failed\n");
+		fprintf(stderr, "\nDER formatting failed\n");
 		return 1;
 	}
 
@@ -68,7 +68,7 @@ int truffle_valid(RSA *rsa_key, const char *search, uint32_t e) {
 	onion_base32(onion, (unsigned char*)&digest);
 	onion[16] = '\0';
 
-	fprintf(stderr, "GPU got %s.onion\n", onion);
+	fprintf(stderr, "\nGPU got %s.onion\n", onion);
 
 	return strncmp(onion, search, strlen(search) - 1) == 0;
 }
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-
+	/* FIXME temporary. Refactor! */
 	struct timespec tv_program_start = {0};
 	struct timespec tv_start = {0};
 	struct timespec tv_end = {0};
@@ -161,6 +161,8 @@ int main(int argc, char **argv)
 	unsigned long e = EXPONENT_MAX;
 	unsigned long key_number = 1;
 	unsigned char byte_e[4] = {0};
+	double total_delta = 0;
+	double peak_delta = 0;
 
 	fprintf(stderr, "Building CL trampoline... ");
 	if (tramp_init(preferred_platform)) {
@@ -268,8 +270,8 @@ int main(int argc, char **argv)
 		}
 		clock_gettime(CLOCK_MONOTONIC, &tv_end);
 
-		/*FIXME*/double peak_delta = tv_delta(&tv_start, &tv_end);
-		/*FIXME*/double total_delta = tv_delta(&tv_program_start, &tv_end);
+		peak_delta = tv_delta(&tv_start, &tv_end);
+		total_delta = tv_delta(&tv_program_start, &tv_end);
 		fprintf(stderr, "Exhausted key attempt %lu in %.2f seconds (peak %.3f MH/s, average %.3f MH/s).\r", key_number, peak_delta, (HASH_PER_RUN/peak_delta/1e6), (key_number*HASH_PER_RUN/total_delta/1e6));
 
 		key_number++;
@@ -301,14 +303,15 @@ int main(int argc, char **argv)
 				if (truffle_valid(rsa_key, search, e)) {
 					success = 1;
 				} else {
-					fprintf(stderr, "GPU doesn't agree with CPU: bug or hardware fault?\n");
+					fprintf(stderr, "\nGPU doesn't agree with CPU: bug or hardware fault?\n");
 				}
 				break;
 			}
 		}
 	} while (success == 0);
 
-	fprintf(stderr, "Destroying CL trampoline... ");
+	total_delta = tv_delta(&tv_program_start, &tv_end);
+	fprintf(stderr, "Completed after %.0f seconds\nDestroying CL trampoline... ", total_delta);
 	tramp_destroy();
 	fprintf(stderr, "Blown to smitherines.\n");
 
