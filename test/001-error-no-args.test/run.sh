@@ -1,6 +1,6 @@
 #!/bin/sh
 
-${EXECUTABLE}
+${EXECUTABLE} -A
 if [ $? -eq 0 ]; then
 	exit 1
 else

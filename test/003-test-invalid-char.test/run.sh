@@ -1,6 +1,6 @@
 #!/bin/sh
 
-${EXECUTABLE} -s foovalid1not
+${EXECUTABLE} -A -s foovalid1not
 
 if [ $? -eq 0 ]; then
 	exit 1

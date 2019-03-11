@@ -1,4 +1,6 @@
 usage: ../../sand-leek [-t threads] [-A] -s search
-searches for keys for onion addresses beginning with `search`.
-Specifying -A disables the use of ANSI escape sequences, which cause
-are not interpreted on some terminals (powershell, cmd.exe)
+Options:
+    -t threads    use `threads` worker threads (default: 1)
+    -A            disable ANSI escape sequences in stderr output
+    -s search     search for keys to onion addresses beginning with `search`
+
