@@ -269,9 +269,11 @@ void
 die_usage(const char *argv0) {
 	fprintf(stderr,
 		"usage: %s [-t threads] [-A] -s search\n"
-		"searches for keys for onion addresses beginning with `search`.\n"
-		"Specifying -A disables the use of ANSI escape sequences, which cause\n"
-		"are not interpreted on some terminals (powershell, cmd.exe)\n",
+		"Options:\n"
+		"    -t threads    use `threads` worker threads (default: 1)\n"
+		"    -A            disable ANSI escape sequences in stderr output\n"
+		"    -s search     search for keys to onion addresses beginning with `search`\n"
+		"\n",
 		argv0
 		);
 	exit(1);
