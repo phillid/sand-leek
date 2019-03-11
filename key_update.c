@@ -2,9 +2,7 @@
 #include <openssl/rsa.h>
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-/* re-calculate the decryption key `d` for the given key
- * the product of e and d must be congruent to 1, and since we are messing
- * with e to generate our keys, we must re-calculate d */
+
 int
 key_update_d(RSA *rsa_key) {
 	const BIGNUM *p = NULL;
@@ -66,9 +64,6 @@ key_update_d(RSA *rsa_key) {
 
 #else
 
-/* re-calculate the decryption key `d` for the given key
- * the product of e and d must be congruent to 1, and since we are messing
- * with e to generate our keys, we must re-calculate d */
 int
 key_update_d(RSA *rsa_key) {
 	BIGNUM *gcd = BN_new();
