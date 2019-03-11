@@ -5,7 +5,7 @@ arch:
     image: archlinux/base
     stage: build-test-all
     before_script:
-        - pacman --noconfirm -Syu base-devel clang python
+        - pacman --noconfirm --needed -Syu base-devel clang python
     script:
         - make CC=gcc clean all test
         - make CC=clang clean all test
