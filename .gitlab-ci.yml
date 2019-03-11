@@ -1,15 +1,6 @@
 stages:
     - build-test-all
 
-arch:
-    image: base/archlinux
-    stage: build-test-all
-    before_script:
-        - pacman --noconfirm -Syu base-devel clang python
-    script:
-        - make CC=gcc clean all test
-        - make CC=clang clean all test
-
 debian-stable:
     image: debian:stable
     stage: build-test-all
