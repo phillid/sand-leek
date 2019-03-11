@@ -378,7 +378,7 @@ main(int argc, char **argv) {
 	pthread_t *workers = NULL;
 	volatile unsigned long *khashes = NULL;
 
-	while ((opt = getopt(argc, argv, "t:s:VA")) != -1) {
+	while ((opt = getopt(argc, argv, "ht:s:VA")) != -1) {
 		switch (opt) {
 		case 'V':
 			show_version();
@@ -393,8 +393,9 @@ main(int argc, char **argv) {
 			no_ansi_esc = 1;
 			break;
 		case '?':
+		case 'h':
 		default:
-			return 1;
+			die_usage(argv[0]);
 			break; /* unreachable */
 		}
 	}
