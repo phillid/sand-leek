@@ -84,7 +84,7 @@ static const struct unit_label time_labels[] = {
 #define eprintf(format, ...) \
 	iprintf_bare("%sERROR: %s" format, \
 	             no_ansi_esc ? "" : COLOUR_BOLD_OFF COLOUR_RED, \
-	             no_ansi_esc ? "" : COLOUR_BWHITE, \
+	             no_ansi_esc ? "" : COLOUR_ALL_OFF COLOUR_BOLD, \
 	             ##__VA_ARGS__);
 
 /* "Real" iprintf, information printf. Outputs a message to stderr, prefixed
@@ -92,7 +92,7 @@ static const struct unit_label time_labels[] = {
 #define iprintf(format, ...) \
 	iprintf_bare("%sINFO: %s" format, \
 	             no_ansi_esc ? "" : COLOUR_BOLD_OFF COLOUR_CYAN, \
-	             no_ansi_esc ? "" : COLOUR_BWHITE, \
+	             no_ansi_esc ? "" : COLOUR_ALL_OFF COLOUR_BOLD, \
 	             ##__VA_ARGS__);
 #else /* SAND_LEEK_DISABLE_COLOUR */
 #define eprintf(...) \
