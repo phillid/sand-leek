@@ -1,8 +1,6 @@
 #!/bin/sh
 
-${EXECUTABLE} -A -s foovalid1not
-
-if [ $? -eq 0 ]; then
+if ${EXECUTABLE} -A -s foovalid1not ; then
 	exit 1
 else
 	exit 0
