@@ -1,51 +1,46 @@
 stages:
-    - build-test-all
+  - Build
+  - Test
 
-arch:
-    image: archlinux/base
-    stage: build-test-all
-    before_script:
-        - pacman --noconfirm --needed -Syu base-devel clang python
-    script:
-        - make CC=gcc clean all test
-        - make CC=clang clean all test
+.build-generic:
+  stage: Build
+  script:
+    - make CC=gcc clean all test
+    - make CC=clang clean all test
+  artifacts:
+    paths:
+      - sand-leek
+    expire_in: 1 year
 
-debian-stable:
-    image: debian:stable
-    stage: build-test-all
-    before_script:
-        - apt-get update
-        - apt-get -y install build-essential clang libssl-dev openssl
-    script:
-        - make CC=gcc clean all test
-        - make CC=clang clean all test
+.build-debian-derived:
+  extends: .build-generic
+  before_script:
+    - apt-get update
+    - apt-get -y install build-essential clang libssl-dev openssl python
 
-ubuntu-trusty:
-    image: ubuntu:trusty
-    stage: build-test-all
-    before_script:
-        - apt-get update
-        - apt-get -y install build-essential clang libssl-dev openssl
-    script:
-        - make CC=gcc clean all test
-        - make CC=clang clean all test
+Arch Linux:
+  image: archlinux/base
+  extends: .build-generic
+  before_script:
+    - pacman --noconfirm --needed -Syu base-devel clang python
 
-ubuntu-xenial:
-    image: ubuntu:xenial
-    stage: build-test-all
-    before_script:
-        - apt-get update
-        - apt-get -y install build-essential clang libssl-dev openssl
-    script:
-        - make CC=gcc clean all test
-        - make CC=clang clean all test
+Debian (stable):
+  image: debian:stable
+  extends: .build-debian-derived
 
-ubuntu-latest:
-    image: ubuntu:latest
-    stage: build-test-all
-    before_script:
-        - apt-get update
-        - apt-get -y install build-essential clang libssl-dev openssl
-    script:
-        - make CC=gcc clean all test
-        - make CC=clang clean all test
+Ubuntu (Bionic):
+  image: ubuntu:bionic
+  extends: .build-debian-derived
+
+Ubuntu (Focal):
+  image: ubuntu:focal
+  extends: .build-debian-derived
+
+Shellcheck:
+  image: archlinux/base
+  stage: Test
+  before_script:
+    - pacman --noconfirm --needed -Syu shellcheck
+  script:
+    - ./test/run-shellcheck.sh
+  needs: []
