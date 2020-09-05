@@ -15,7 +15,10 @@ stderr="$(mktemp)"
 # Four character search should be a < 1 second CPU burst for CI runner
 ${EXECUTABLE} -s site > "$key" 2>"$stderr"
 
-mapfile -t found < <(tr '\r' '\n' < "$stderr" | grep Found | cut -d ' ' -f 3)
+# no mapfile, Mac OS compat
+while IFS= read -r domain ; do
+	found+=("$domain")
+done < <(tr '\r' '\n' < "$stderr" | grep Found | cut -d ' ' -f 3)
 
 echo "sand-leek says it found ${found[*]}..."
 
